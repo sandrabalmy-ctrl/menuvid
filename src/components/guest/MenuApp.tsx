@@ -478,6 +478,33 @@ function MenuBody({
           />
         )}
 
+        {/* Flèches monter / descendre */}
+        <div className="fixed bottom-24 right-3 z-30 flex flex-col gap-2">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label={lang === "en" ? "Scroll up" : "Monter"}
+            className="grid h-11 w-11 place-items-center rounded-full bg-surface/90 text-brand shadow-lg ring-1 ring-brand/30 backdrop-blur transition active:scale-90"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          </button>
+          <button
+            onClick={() =>
+              window.scrollTo({
+                top: document.documentElement.scrollHeight,
+                behavior: "smooth",
+              })
+            }
+            aria-label={lang === "en" ? "Scroll down" : "Descendre"}
+            className="grid h-11 w-11 place-items-center rounded-full bg-surface/90 text-brand shadow-lg ring-1 ring-brand/30 backdrop-blur transition active:scale-90"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+
         {ordering && (
           <CartBar
             slug={restaurant.slug}

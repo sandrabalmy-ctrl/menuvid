@@ -1,0 +1,342 @@
+// ============================================================================
+//  MenuVid — modèle de données (SaaS multi-restaurants)
+// ----------------------------------------------------------------------------
+//  Démo locale : SQLite (aucun compte externe requis).
+//  Mise en ligne : il suffira de remplacer provider="sqlite" par "postgresql"
+//  et de convertir les champs JSON en tableaux natifs — le reste ne bouge pas.
+//
+//  Règle multi-tenant : TOUTES les tables métier portent un `restaurantId`.
+//  Un restaurant ne voit jamais les données d'un autre (verrou dans lib/tenant).
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Le restaurant client (le "tenant") ------------------------------------
+model Restaurant {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique // ex. "chez-marco" → menu.mondomaine/r/chez-marco
+  logoUrl       String?
+  brandColor    String   @default("#059669") // couleur d'accent du menu
+  theme            String  @default("noir") // fond du menu
+  welcomeMessage   String? // encadré d'accueil (FR)
+  welcomeMessageEn String? // encadré d'accueil (EN)
+  offerEnglish     Boolean @default(false) // proposer la bascule FR/EN au convive
+  defaultLocale    String  @default("fr")
+
+  // Roue des cadeaux (avis Google → cadeau)
+  reviewGiftEnabled Boolean @default(false)
+  googleReviewUrl   String? // lien vers la page d'avis Google du restaurant
+  reviewPrizes      String  @default("[]") // JSON: [{ "label": "Café offert", "weight": 1 }]
+
+  tipEnabled           Boolean @default(false) // proposer un pourboire à la commande
+  onlinePaymentEnabled Boolean @default(false) // paiement en ligne à table
+  orderingPaused       Boolean @default(false) // commandes fermées (hors service)
+  prepEtaMinutes       Int     @default(20)    // temps d'attente estimé (min), ajustable en direct
+  introEnabled         Boolean @default(false) // écran d'accueil « BIENVENUE → Boire / Manger »
+
+  // Carte de fidélité (points → récompense)
+  loyaltyEnabled   Boolean @default(false)
+  loyaltyThreshold Int     @default(10) // nb de visites pour la récompense
+  loyaltyReward    String  @default("Un plat offert")
+
+  serviceRequests ServiceRequest[]
+  memberships     LoyaltyMembership[]
+  reviewProofs    ReviewProof[]
+  feedback        Feedback[]
+  sessions        TableSession[]
+  currency      String   @default("EUR")
+
+  // Abonnement / palier (verrouille les fonctionnalités)
+  plan   String @default("ORDER") // ESSENTIAL | VIDEO | ORDER
+  status String @default("ACTIVE") // ACTIVE | TRIAL | SUSPENDED
+
+  stripeCustomerId String? // rattachement Stripe (facturation)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  tables       DiningTable[]
+  categories   Category[]
+  dishes       Dish[]
+  formules     Formule[]
+  orders       Order[]
+  subscription Subscription?
+  events       AnalyticsEvent[]
+}
+
+// --- Compte restaurateur (accès back-office) -------------------------------
+model User {
+  id           String   @id @default(cuid())
+  // Nul pour un SUPERADMIN (rattaché à aucun restaurant).
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  passwordHash String
+  role         String   @default("OWNER") // OWNER | STAFF | SUPERADMIN
+  createdAt    DateTime @default(now())
+
+  // Réinitialisation de mot de passe (jeton haché + expiration)
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
+}
+
+// --- Table physique du restaurant (1 QR code par table) --------------------
+model DiningTable {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  number       Int
+  label        String?  // ex. "Terrasse 3"
+  createdAt    DateTime @default(now())
+  orders       Order[]
+
+  @@unique([restaurantId, number])
+}
+
+// --- Catégorie du menu (Entrées, Plats, Desserts, Boissons…) ---------------
+model Category {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  nameEn       String?
+  position     Int      @default(0)
+  dishes       Dish[]
+
+  @@index([restaurantId])
+}
+
+// --- Plat -------------------------------------------------------------------
+model Dish {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name          String
+  nameEn        String?
+  description   String   @default("")
+  descriptionEn String?
+  priceCents    Int      // prix en centimes (évite les erreurs d'arrondi)
+
+  photoUrl    String?
+  videoUrl    String?  // clip vertical 9:16, court, en boucle
+  badge       String?  // mise en avant : "populaire" | "coup-de-coeur"
+
+  // Options/variantes (JSON) : cuisson, taille, suppléments payants…
+  // [{ id, name, type: "single"|"multiple", required, choices: [{ id, label, priceCents }] }]
+  optionsJson String   @default("[]")
+
+  // Stockés en JSON pour SQLite ; deviendront des String[] natifs en Postgres
+  allergens   String   @default("[]") // ex. ["gluten","lactose"]
+  diets       String   @default("[]") // ex. ["vegetarien","sans-gluten"]
+
+  available   Boolean  @default(true) // désactivable en 1 clic (rupture)
+  position    Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+  events      AnalyticsEvent[]
+
+  @@index([restaurantId])
+  @@index([categoryId])
+}
+
+// --- Commande ---------------------------------------------------------------
+model Order {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableId      String?
+  table        DiningTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+
+  status     String   @default("RECEIVED") // RECEIVED | PREPARING | READY | SERVED | CANCELLED
+  totalCents Int      @default(0)
+  tipCents   Int      @default(0) // pourboire éventuel
+  etaMinutes Int?     // temps d'attente estimé figé à la commande (min)
+  note       String?
+
+  // Paiement en ligne
+  paid            Boolean   @default(false)
+  paidAt          DateTime?
+  stripeSessionId String?
+
+  // Client fidélité éventuel (si connecté au moment de la commande)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Session de table (regroupe les tournées d'une même table)
+  sessionId String?
+  session   TableSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@index([restaurantId])
+}
+
+// --- Session de table : regroupe les commandes (tournées) d'une table ------
+model TableSession {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableNumber  Int?
+  status       String     @default("OPEN") // OPEN | SETTLED
+  paidCents    Int        @default(0) // déjà réglé (paiements / parts)
+  createdAt    DateTime   @default(now())
+  settledAt    DateTime?
+
+  orders Order[]
+
+  @@index([restaurantId, status])
+}
+
+// --- Ligne de commande ------------------------------------------------------
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId         String?
+  dish           Dish?    @relation(fields: [dishId], references: [id])
+  formuleId      String?  // ligne "formule" (menu à prix fixe)
+  formule        Formule? @relation(fields: [formuleId], references: [id])
+  nameSnapshot   String   // nom du plat/de la formule figé au moment de la commande
+  unitPriceCents Int      // inclut le supplément des options choisies
+  optionsText    String?  // options/composition (ex. "À point · +Bacon" ou "Entrée: … · Plat: …")
+  quantity       Int      @default(1)
+  note           String?
+}
+
+// Formule = menu à prix fixe (ex. entrée + plat + dessert).
+// Le convive choisit un plat par étape ; le prix est fixe.
+model Formule {
+  id            String   @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name          String
+  nameEn        String?
+  description   String   @default("")
+  descriptionEn String?
+  priceCents    Int
+  photoUrl      String?
+
+  // Étapes : [{ id, name, nameEn, dishIds: [<dishId>] }]
+  stepsJson     String   @default("[]")
+
+  available     Boolean  @default(true)
+  position      Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems    OrderItem[]
+
+  @@index([restaurantId])
+}
+
+// --- Abonnement (Stripe plus tard) -----------------------------------------
+model Subscription {
+  id           String   @id @default(cuid())
+  restaurantId String   @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  plan         String   // ESSENTIAL | VIDEO | ORDER
+  priceCents   Int
+  status       String   @default("ACTIVE")
+  startedAt    DateTime @default(now())
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+}
+
+// --- Feedback privé (avant/au lieu d'un avis public) -----------------------
+model Feedback {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  rating       Int? // 1..5, facultatif
+  message      String
+  tableNumber  Int?
+  handled      Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, handled])
+}
+
+// --- Preuve d'avis (capture d'écran envoyée pour débloquer la roue) --------
+model ReviewProof {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  imageUrl     String
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+}
+
+// --- Client final avec compte fidélité (optionnel) -------------------------
+model Customer {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  memberships LoyaltyMembership[]
+  orders      Order[]
+}
+
+// --- Carte de fidélité : progression d'un client dans UN restaurant --------
+model LoyaltyMembership {
+  id           String     @id @default(cuid())
+  customerId   String
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  points       Int        @default(0) // 1 point = 1 visite/commande
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([customerId, restaurantId])
+  @@index([restaurantId])
+}
+
+// --- Demande de service (appeler le serveur / demander l'addition) ----------
+model ServiceRequest {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableNumber  Int?
+  type         String // CALL_WAITER | BILL
+  resolved     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, resolved])
+}
+
+// --- Événement analytics (vue vidéo, ajout panier, commande) ---------------
+model AnalyticsEvent {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  dishId       String?
+  dish         Dish? @relation(fields: [dishId], references: [id], onDelete: SetNull)
+  type         String // VIDEO_VIEW | ADD_TO_CART | ORDER
+  createdAt    DateTime @default(now())
+
+  @@index([restaurantId, type])
+}

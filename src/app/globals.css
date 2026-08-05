@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   Thème MenuVid — mobile-first, immersif (ambiance sombre qui met en valeur
+   la nourriture et les vidéos, façon réseau social culinaire).
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Thème clair par défaut de l'outil (accueil, back-office, super-admin) */
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #eeece7;
+  --text: #1c1b1a;
+  --muted: #77746e;
+  --border: #e6e3dc;
+  /* Couleur d'accent par défaut (surchargée par la couleur de marque du resto) */
+  --brand: #059669;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  /* Empêche le "rebond" élastique blanc en haut/bas sur mobile */
+  overscroll-behavior-y: none;
+}
+
+/* Masque la scrollbar (carrousel de catégories, listes) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animations d'apparition (panier, feuille plein écran) */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* ============================================================================
+   Touches "premium"
+   ========================================================================== */
+
+/* Police d'affichage élégante pour les titres */
+.font-display {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  letter-spacing: -0.015em;
+}
+
+/* Sélection de texte à la couleur de marque */
+::selection {
+  background: color-mix(in srgb, var(--brand) 30%, transparent);
+}
+
+/* Apparition douce des cartes / médias */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Défilement doux entre catégories */
+html {
+  scroll-behavior: smooth;
 }

@@ -11,7 +11,7 @@ import { IntroScreen } from "./IntroScreen";
 import { CartBar } from "./CartBar";
 import { GiftWheel } from "./GiftWheel";
 import { LoyaltyCard } from "./LoyaltyCard";
-import { ActionsHub } from "./ActionsHub";
+import { LogoRing } from "./LogoRing";
 import { FeedbackButton } from "./FeedbackButton";
 import { initTrack } from "@/lib/track";
 import { themeStyle } from "@/lib/themes";
@@ -51,10 +51,28 @@ function MenuBody({
   const [active, setActive] = useState(categories[0]?.id ?? "");
   const [openDish, setOpenDish] = useState<DishDTO | null>(null);
   const [openFormule, setOpenFormule] = useState<FormuleDTO | null>(null);
-  // Page « accès rapides » ouverte par le logo (logo au centre, 3 choix autour).
-  const [hubOpen, setHubOpen] = useState(false);
+  // Accès rapides (texte incurvé autour du logo) : ouvrent fidélité/roue/service.
   const [loyaltyOpen, setLoyaltyOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
+  const [serviceSent, setServiceSent] = useState<"CALL_WAITER" | "BILL" | null>(
+    null
+  );
+
+  async function askService(type: "CALL_WAITER" | "BILL") {
+    setServiceSent(type);
+    try {
+      await fetch("/api/service-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: menu.restaurant.id,
+          tableNumber,
+          type,
+        }),
+      });
+    } catch {}
+    setTimeout(() => setServiceSent(null), 4000);
+  }
   // Écran d'accueil Boire/Manger : le choix vient de l'URL (?vue=…), pas d'un
   // état JS → fonctionne même si l'hydratation du navigateur échoue (Safari).
   const mealChoice = initialView;
@@ -166,43 +184,39 @@ function MenuBody({
                 )}
               </div>
 
-              {/* Logo cliquable — ouvre la page des accès (Fidélité / Cadeaux / Addition) */}
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={() => setHubOpen(true)}
-                  aria-label={lang === "en" ? "Quick access" : "Accès rapides"}
-                  className="rounded-[20px] ring-2 ring-brand/50 ring-offset-4 ring-offset-bg transition active:scale-95"
-                >
-                  {restaurant.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={restaurant.logoUrl}
-                      alt={restaurant.name}
-                      className="h-24 w-24 rounded-2xl object-contain shadow-lg shadow-black/40"
-                    />
-                  ) : (
-                    <span className="block px-5 py-3 font-display text-4xl font-semibold text-brand">
-                      {restaurant.name}
-                    </span>
-                  )}
-                </button>
-
-                {/* Indication dorée des accès (le logo mène à la page dédiée) */}
-                {(menu.loyalty.enabled || gift.enabled || tableNumber != null) && (
-                  <button
-                    onClick={() => setHubOpen(true)}
-                    className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand/80"
-                  >
-                    {[
-                      menu.loyalty.enabled && `🎟️ ${lang === "en" ? "Loyalty" : "Fidélité"}`,
-                      gift.enabled && `🎡 ${lang === "en" ? "Rewards" : "Cadeaux"}`,
-                      tableNumber != null && `🧾 ${lang === "en" ? "Bill" : "Addition"}`,
-                    ]
-                      .filter(Boolean)
-                      .join("  ·  ")}
-                  </button>
-                )}
-              </div>
+              {/* Logo entouré de texte incurvé (accès rapides, sans rond) */}
+              <LogoRing
+                logoUrl={restaurant.logoUrl}
+                name={restaurant.name}
+                items={
+                  [
+                    menu.loyalty.enabled
+                      ? {
+                          label: lang === "en" ? "Loyalty" : "Fidélité",
+                          onClick: () => setLoyaltyOpen(true),
+                        }
+                      : undefined,
+                    gift.enabled
+                      ? {
+                          label: lang === "en" ? "Rewards" : "Cadeaux",
+                          onClick: () => setWheelOpen(true),
+                        }
+                      : undefined,
+                    tableNumber != null
+                      ? {
+                          label: lang === "en" ? "Waiter" : "Serveur",
+                          onClick: () => askService("CALL_WAITER"),
+                        }
+                      : undefined,
+                    tableNumber != null
+                      ? {
+                          label: lang === "en" ? "Bill" : "Addition",
+                          onClick: () => askService("BILL"),
+                        }
+                      : undefined,
+                  ].filter(Boolean) as { label: string; onClick: () => void }[]
+                }
+              />
             </div>
 
             {menu.orderingPaused ? (
@@ -485,26 +499,19 @@ function MenuBody({
           onOpenChange={setWheelOpen}
         />
 
-        {/* Page « accès rapides » : logo au centre, 3 choix autour */}
-        {hubOpen && (
-          <ActionsHub
-            logoUrl={restaurant.logoUrl}
-            name={restaurant.name}
-            lang={lang}
-            restaurantId={restaurant.id}
-            tableNumber={tableNumber}
-            loyaltyEnabled={menu.loyalty.enabled}
-            giftEnabled={gift.enabled}
-            onClose={() => setHubOpen(false)}
-            onLoyalty={() => {
-              setHubOpen(false);
-              setLoyaltyOpen(true);
-            }}
-            onWheel={() => {
-              setHubOpen(false);
-              setWheelOpen(true);
-            }}
-          />
+        {/* Confirmation appel serveur / addition */}
+        {serviceSent && (
+          <div className="fixed inset-x-0 top-4 z-50 flex justify-center px-4 animate-fade-in">
+            <div className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-2xl">
+              {serviceSent === "CALL_WAITER"
+                ? lang === "en"
+                  ? "✅ The waiter is coming"
+                  : "✅ Le serveur arrive"
+                : lang === "en"
+                  ? "✅ Bill requested"
+                  : "✅ Addition demandée"}
+            </div>
+          </div>
         )}
 
         {/* Flèches monter / descendre */}

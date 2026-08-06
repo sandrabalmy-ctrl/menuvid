@@ -29,7 +29,7 @@ export function LogoRing({
   } as const;
 
   return (
-    <div className="relative mx-auto h-64 w-64">
+    <div className="relative mx-auto h-72 w-72">
       {/* Logo au centre */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         {logoUrl ? (
@@ -47,13 +47,13 @@ export function LogoRing({
       </div>
 
       {/* Texte incurvé autour */}
-      <svg viewBox="0 0 256 256" className="absolute inset-0 h-full w-full">
+      <svg viewBox="0 0 288 288" className="absolute inset-0 h-full w-full">
         <defs>
-          {/* Arc du haut plus resserré : le mot du haut (au-dessus du bord plat)
-              paraît alors à la même distance que ceux du bas (près des coins). */}
-          <path id="ringTop" d="M 54,128 A 74,74 0 0 1 202,128" fill="none" />
-          {/* Arc du bas (bombé vers le bas) : texte lisible en dessous */}
-          <path id="ringBot" d="M 38,128 A 90,90 0 0 0 218,128" fill="none" />
+          {/* Fidélité (haut) : rayon 90, au-dessus du bord plat. */}
+          <path id="ringTop" d="M 54,144 A 90,90 0 0 1 234,144" fill="none" />
+          {/* Cadeaux / Addition (bas) : rayon plus grand pour être à la MÊME
+              distance visuelle du logo carré (les coins dépassent). */}
+          <path id="ringBot" d="M 36,144 A 108,108 0 0 0 252,144" fill="none" />
         </defs>
 
         {items.map((it, i) => {

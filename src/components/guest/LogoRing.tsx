@@ -49,8 +49,9 @@ export function LogoRing({
       {/* Texte incurvé autour */}
       <svg viewBox="0 0 256 256" className="absolute inset-0 h-full w-full">
         <defs>
-          {/* Arc du haut (même rayon que le bas → 3 mots à distance égale du logo) */}
-          <path id="ringTop" d="M 38,128 A 90,90 0 0 1 218,128" fill="none" />
+          {/* Arc du haut plus resserré : le mot du haut (au-dessus du bord plat)
+              paraît alors à la même distance que ceux du bas (près des coins). */}
+          <path id="ringTop" d="M 54,128 A 74,74 0 0 1 202,128" fill="none" />
           {/* Arc du bas (bombé vers le bas) : texte lisible en dessous */}
           <path id="ringBot" d="M 38,128 A 90,90 0 0 0 218,128" fill="none" />
         </defs>

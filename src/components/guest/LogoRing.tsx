@@ -1,8 +1,16 @@
 "use client";
 
 // Logo entouré de texte incurvé qui suit son bord (façon sceau).
-// 4 libellés cliquables, sans rond : 2 sur l'arc du haut, 2 sur l'arc du bas.
+// Les libellés sont répartis harmonieusement selon leur nombre.
 type Item = { label: string; onClick: () => void };
+
+// Position de chaque libellé : arc (haut/bas) + décalage le long de l'arc.
+const LAYOUTS: Record<number, [ "ringTop" | "ringBot", string ][]> = {
+  1: [["ringTop", "50%"]],
+  2: [["ringTop", "50%"], ["ringBot", "50%"]],
+  3: [["ringTop", "50%"], ["ringBot", "20%"], ["ringBot", "80%"]],
+  4: [["ringTop", "25%"], ["ringTop", "75%"], ["ringBot", "25%"], ["ringBot", "75%"]],
+};
 
 export function LogoRing({
   logoUrl,
@@ -11,11 +19,9 @@ export function LogoRing({
 }: {
   logoUrl: string | null;
   name: string;
-  items: Item[]; // ordre : [haut-gauche, haut-droite, bas-gauche, bas-droite]
+  items: Item[];
 }) {
-  const [tl, tr, bl, br] = items;
-
-  const textCls = "cursor-pointer uppercase font-semibold active:opacity-70";
+  const layout = LAYOUTS[items.length] ?? LAYOUTS[4];
   const style = {
     fontSize: "11px",
     fill: "var(--brand)",
@@ -44,47 +50,28 @@ export function LogoRing({
       <svg viewBox="0 0 256 256" className="absolute inset-0 h-full w-full">
         <defs>
           {/* Arc du haut (bombé vers le haut) : texte lisible au-dessus */}
-          <path
-            id="ringTop"
-            d="M 38,128 A 90,90 0 0 1 218,128"
-            fill="none"
-          />
+          <path id="ringTop" d="M 38,128 A 90,90 0 0 1 218,128" fill="none" />
           {/* Arc du bas (bombé vers le bas) : texte lisible en dessous */}
-          <path
-            id="ringBot"
-            d="M 38,128 A 90,90 0 0 0 218,128"
-            fill="none"
-          />
+          <path id="ringBot" d="M 38,128 A 90,90 0 0 0 218,128" fill="none" />
         </defs>
 
-        {tl && (
-          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={tl.onClick}>
-            <textPath href="#ringTop" startOffset="25%" textAnchor="middle">
-              {tl.label}
-            </textPath>
-          </text>
-        )}
-        {tr && (
-          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={tr.onClick}>
-            <textPath href="#ringTop" startOffset="75%" textAnchor="middle">
-              {tr.label}
-            </textPath>
-          </text>
-        )}
-        {bl && (
-          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={bl.onClick}>
-            <textPath href="#ringBot" startOffset="25%" textAnchor="middle">
-              {bl.label}
-            </textPath>
-          </text>
-        )}
-        {br && (
-          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={br.onClick}>
-            <textPath href="#ringBot" startOffset="75%" textAnchor="middle">
-              {br.label}
-            </textPath>
-          </text>
-        )}
+        {items.map((it, i) => {
+          const [path, offset] = layout[i] ?? ["ringTop", "50%"];
+          return (
+            <text
+              key={i}
+              className="cursor-pointer uppercase font-semibold active:opacity-70"
+              style={style}
+              textLength={96}
+              lengthAdjust="spacing"
+              onClick={it.onClick}
+            >
+              <textPath href={`#${path}`} startOffset={offset} textAnchor="middle">
+                {it.label}
+              </textPath>
+            </text>
+          );
+        })}
       </svg>
     </div>
   );

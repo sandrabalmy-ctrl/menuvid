@@ -204,12 +204,6 @@ function MenuBody({
                       : undefined,
                     tableNumber != null
                       ? {
-                          label: lang === "en" ? "Waiter" : "Serveur",
-                          onClick: () => askService("CALL_WAITER"),
-                        }
-                      : undefined,
-                    tableNumber != null
-                      ? {
                           label: lang === "en" ? "Bill" : "Addition",
                           onClick: () => askService("BILL"),
                         }

@@ -56,7 +56,7 @@
    "status": "ACTIVE",
    "stripeCustomerId": null,
    "createdAt": "2026-08-05T19:58:51.139Z",
-   "updatedAt": "2026-08-05T21:38:09.509Z"
+   "updatedAt": "2026-08-05T23:17:27.746Z"
   }
  ],
  "categories": [
@@ -98,37 +98,16 @@
   {
    "id": "cmsgififz000ks5hxhgnh0ss5",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "name": "Pizzas",
+   "name": "Plats",
    "nameEn": null,
    "position": 1
-  },
-  {
-   "id": "cmsgifig30012s5hxot2wu3yz",
-   "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "name": "Burgers",
-   "nameEn": null,
-   "position": 2
-  },
-  {
-   "id": "cmsgifig5001as5hxfxnc1y7f",
-   "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "name": "Pâtes",
-   "nameEn": null,
-   "position": 3
-  },
-  {
-   "id": "cmsgifiga001qs5hxbexk0mya",
-   "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "name": "Grillades & Poissons",
-   "nameEn": null,
-   "position": 4
   },
   {
    "id": "cmsgifigg002es5hxtx4jah5y",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
    "name": "Desserts",
    "nameEn": null,
-   "position": 5
+   "position": 2
   }
  ],
  "dishes": [
@@ -735,7 +714,7 @@
   {
    "id": "cmsgifig30014s5hx0ys6p0cu",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig30012s5hxot2wu3yz",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Gourmet Burger",
    "nameEn": null,
    "description": "Pain brioché maison, steak haché pur bœuf grillé, cheddar, laitue, tomates, oignons caramélisés, cornichons, pommes caramélisées, œuf à cheval, sauce maison, accompagné de frites.",
@@ -748,14 +727,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 0,
+   "position": 100,
    "createdAt": "2026-08-05T19:58:51.172Z",
-   "updatedAt": "2026-08-05T22:06:07.348Z"
+   "updatedAt": "2026-08-06T20:59:40.885Z"
   },
   {
    "id": "cmsgifig40016s5hxt16vmhme",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig30012s5hxot2wu3yz",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Tartiflette Burger",
    "nameEn": null,
    "description": "Pain brioché maison, steak haché pur bœuf grillé, cheddar, œuf à cheval, jambon fumé de bœuf, stick de fromage pané, oignons grillés, laitue, tomates, accompagné de frites.",
@@ -768,14 +747,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 1,
+   "position": 101,
    "createdAt": "2026-08-05T19:58:51.172Z",
-   "updatedAt": "2026-08-05T22:06:07.348Z"
+   "updatedAt": "2026-08-06T20:59:40.888Z"
   },
   {
    "id": "cmsgifig40018s5hxpk1zhtmx",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig30012s5hxot2wu3yz",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Burger Forestier",
    "nameEn": null,
    "description": "Pain brioché maison, steak haché pur bœuf grillé, cheddar, œuf à cheval, champignons grillés, onion rings, laitue, tomates, accompagné de frites.",
@@ -788,14 +767,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 2,
+   "position": 102,
    "createdAt": "2026-08-05T19:58:51.173Z",
-   "updatedAt": "2026-08-05T22:06:07.348Z"
+   "updatedAt": "2026-08-06T20:59:40.889Z"
   },
   {
    "id": "cmsgifig6001cs5hxwwall504",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Lasagnes",
    "nameEn": null,
    "description": "Pâtes fraîches, viande de bœuf hachée, sauce tomate, emmental et sauce béchamel onctueuse.",
@@ -808,14 +787,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 0,
+   "position": 200,
    "createdAt": "2026-08-05T19:58:51.174Z",
-   "updatedAt": "2026-08-05T22:06:07.349Z"
+   "updatedAt": "2026-08-06T20:59:40.889Z"
   },
   {
    "id": "cmsgifig7001es5hxshzrfrq3",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Linguine aux fruits de mer",
    "nameEn": null,
    "description": "Linguine, crevettes, calamars, moules, palourdes et sauce crémeuse aux fruits de mer.",
@@ -828,14 +807,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 1,
+   "position": 201,
    "createdAt": "2026-08-05T19:58:51.175Z",
-   "updatedAt": "2026-08-05T22:06:07.349Z"
+   "updatedAt": "2026-08-06T20:59:40.890Z"
   },
   {
    "id": "cmsgifig8001gs5hx696tbsas",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Linguine aux gambas, sauce pesto",
    "nameEn": null,
    "description": "Linguine, gambas sautées et sauce pesto au basilic.",
@@ -848,14 +827,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 2,
+   "position": 202,
    "createdAt": "2026-08-05T19:58:51.176Z",
-   "updatedAt": "2026-08-05T22:06:07.349Z"
+   "updatedAt": "2026-08-06T20:59:40.890Z"
   },
   {
    "id": "cmsgifig8001is5hx53y6cxoe",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Pâtes forestières",
    "nameEn": null,
    "description": "Pâtes, filet de poulet, champignons frais et sauce crémeuse.",
@@ -868,14 +847,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 3,
+   "position": 203,
    "createdAt": "2026-08-05T19:58:51.177Z",
-   "updatedAt": "2026-08-05T22:06:07.350Z"
+   "updatedAt": "2026-08-06T20:59:40.891Z"
   },
   {
    "id": "cmsgifig9001ks5hxpuctayiy",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Pâtes aux lamelles de bœuf",
    "nameEn": null,
    "description": "Pâtes, lamelles de bœuf sautées et sauce crémeuse.",
@@ -888,14 +867,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 4,
+   "position": 204,
    "createdAt": "2026-08-05T19:58:51.177Z",
-   "updatedAt": "2026-08-05T22:06:07.350Z"
+   "updatedAt": "2026-08-06T20:59:40.891Z"
   },
   {
    "id": "cmsgifig9001ms5hxnk8t47vh",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Linguine aux crevettes, crème fraîche",
    "nameEn": null,
    "description": "Linguine, crevettes sautées et sauce à la crème fraîche.",
@@ -908,14 +887,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 5,
+   "position": 205,
    "createdAt": "2026-08-05T19:58:51.178Z",
-   "updatedAt": "2026-08-05T22:06:07.351Z"
+   "updatedAt": "2026-08-06T20:59:40.892Z"
   },
   {
    "id": "cmsgifiga001os5hxp9p70jzx",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifig5001as5hxfxnc1y7f",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Linguine aux crevettes, sauce tomate",
    "nameEn": null,
    "description": "Linguine, crevettes sautées et sauce tomate maison.",
@@ -928,14 +907,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 6,
+   "position": 206,
    "createdAt": "2026-08-05T19:58:51.178Z",
-   "updatedAt": "2026-08-05T22:06:07.351Z"
+   "updatedAt": "2026-08-06T20:59:40.892Z"
   },
   {
    "id": "cmsgifigb001ss5hxmk8dm2ps",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Filet de bœuf",
    "nameEn": null,
    "description": "Filet de bœuf grillé, servi avec une purée de pommes de terre.",
@@ -948,14 +927,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 0,
+   "position": 300,
    "createdAt": "2026-08-05T19:58:51.179Z",
-   "updatedAt": "2026-08-05T22:06:07.351Z"
+   "updatedAt": "2026-08-06T20:59:40.892Z"
   },
   {
    "id": "cmsgifigb001us5hxkgu19ebk",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Entrecôte grillée (importée)",
    "nameEn": null,
    "description": "Entrecôte de bœuf importée, grillée et servie avec des frites.",
@@ -968,14 +947,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 1,
+   "position": 301,
    "createdAt": "2026-08-05T19:58:51.180Z",
-   "updatedAt": "2026-08-05T22:06:07.352Z"
+   "updatedAt": "2026-08-06T20:59:40.893Z"
   },
   {
    "id": "cmsgifigc001ws5hxhghx402t",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Épaule d'agneau",
    "nameEn": null,
    "description": "Épaule d'agneau marinée et grillée, servie avec des frites.",
@@ -988,14 +967,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 2,
+   "position": 302,
    "createdAt": "2026-08-05T19:58:51.180Z",
-   "updatedAt": "2026-08-05T22:06:07.352Z"
+   "updatedAt": "2026-08-06T20:59:40.894Z"
   },
   {
    "id": "cmsgifigc001ys5hx2pk2p6zh",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Côtelettes d'agneau",
    "nameEn": null,
    "description": "Côtelettes d'agneau marinées et grillées, servies avec une purée de pommes de terre et des légumes.",
@@ -1008,14 +987,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 3,
+   "position": 303,
    "createdAt": "2026-08-05T19:58:51.181Z",
-   "updatedAt": "2026-08-05T22:06:07.353Z"
+   "updatedAt": "2026-08-06T20:59:40.894Z"
   },
   {
    "id": "cmsgifigd0020s5hxbvjitcfb",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Brochettes de bœuf",
    "nameEn": null,
    "description": "Brochettes de bœuf marinées et grillées, servies avec des pommes grenailles.",
@@ -1028,14 +1007,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 4,
+   "position": 304,
    "createdAt": "2026-08-05T19:58:51.181Z",
-   "updatedAt": "2026-08-05T22:06:07.353Z"
+   "updatedAt": "2026-08-06T20:59:40.896Z"
   },
   {
    "id": "cmsgifigd0022s5hxnji88hkp",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Brochettes de poulet",
    "nameEn": null,
    "description": "Brochettes de poulet marinées et grillées, servies avec des pommes grenailles.",
@@ -1048,14 +1027,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 5,
+   "position": 305,
    "createdAt": "2026-08-05T19:58:51.182Z",
-   "updatedAt": "2026-08-05T22:06:07.353Z"
+   "updatedAt": "2026-08-06T20:59:40.897Z"
   },
   {
    "id": "cmsgifigd0024s5hx9aglqcmv",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Brochettes de gambas",
    "nameEn": null,
    "description": "Brochettes de gambas marinées et grillées, servies avec une purée de potiron.",
@@ -1068,14 +1047,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 6,
+   "position": 306,
    "createdAt": "2026-08-05T19:58:51.182Z",
-   "updatedAt": "2026-08-05T22:06:07.354Z"
+   "updatedAt": "2026-08-06T20:59:40.898Z"
   },
   {
    "id": "cmsgifige0026s5hxwxq60f69",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Brochettes de lotte",
    "nameEn": null,
    "description": "Brochettes de lotte marinées et grillées, servies avec du riz.",
@@ -1088,14 +1067,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 7,
+   "position": 307,
    "createdAt": "2026-08-05T19:58:51.182Z",
-   "updatedAt": "2026-08-05T22:06:07.354Z"
+   "updatedAt": "2026-08-06T20:59:40.899Z"
   },
   {
    "id": "cmsgifige0028s5hxfetrl6y5",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Thiof grillé",
    "nameEn": null,
    "description": "Filet de thiof grillé, servi avec du riz.",
@@ -1108,14 +1087,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 8,
+   "position": 308,
    "createdAt": "2026-08-05T19:58:51.183Z",
-   "updatedAt": "2026-08-05T22:06:07.354Z"
+   "updatedAt": "2026-08-06T20:59:40.900Z"
   },
   {
    "id": "cmsgifigf002as5hxwhnovt44",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Camerons grillés",
    "nameEn": null,
    "description": "Camerons grillés, servis avec du riz.",
@@ -1128,14 +1107,14 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 9,
+   "position": 309,
    "createdAt": "2026-08-05T19:58:51.183Z",
-   "updatedAt": "2026-08-05T22:06:07.355Z"
+   "updatedAt": "2026-08-06T20:59:40.901Z"
   },
   {
    "id": "cmsgifigf002cs5hx6p3abbjh",
    "restaurantId": "cmsgifif90000s5hxz1uuzqr4",
-   "categoryId": "cmsgifiga001qs5hxbexk0mya",
+   "categoryId": "cmsgififz000ks5hxhgnh0ss5",
    "name": "Crevettes sautées à l'ail",
    "nameEn": null,
    "description": "Crevettes sautées à l'ail frais, persil et beurre.",
@@ -1148,9 +1127,9 @@
    "allergens": "[]",
    "diets": "[]",
    "available": true,
-   "position": 10,
+   "position": 310,
    "createdAt": "2026-08-05T19:58:51.183Z",
-   "updatedAt": "2026-08-05T22:06:07.355Z"
+   "updatedAt": "2026-08-06T20:59:40.901Z"
   },
   {
    "id": "cmsgifigh002gs5hxt7h6dted",

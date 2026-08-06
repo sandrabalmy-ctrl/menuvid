@@ -78,30 +78,40 @@ export function GiftWheel({
   restaurantId,
   gift,
   gold = false,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   restaurantId: string;
   gift: GiftConfig;
   gold?: boolean;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const { lang, t } = useLang();
   if (!gift.enabled) return null;
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label={t("giftCta")}
-        title={t("giftCta")}
-        className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
-          gold
-            ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
-            : "bg-surface font-medium shadow-sm ring-1 ring-border"
-        }`}
-      >
-        <MiniWheel />
-        <span>{lang === "en" ? "Rewards" : "Cadeaux"}</span>
-      </button>
+      {!hideTrigger && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={t("giftCta")}
+          title={t("giftCta")}
+          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
+            gold
+              ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
+              : "bg-surface font-medium shadow-sm ring-1 ring-border"
+          }`}
+        >
+          <MiniWheel />
+          <span>{lang === "en" ? "Rewards" : "Cadeaux"}</span>
+        </button>
+      )}
       {open && (
         <WheelModal
           restaurantId={restaurantId}

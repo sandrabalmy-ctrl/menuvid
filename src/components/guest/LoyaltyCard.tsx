@@ -55,14 +55,22 @@ type Strings = (typeof S)["fr"];
 export function LoyaltyCard({
   restaurantId,
   gold = false,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   restaurantId: string;
   gold?: boolean;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const { lang } = useLang();
   const t = S[lang];
   const [data, setData] = useState<Status | null>(null);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   const refresh = useCallback(async () => {
     try {
@@ -82,28 +90,30 @@ export function LoyaltyCard({
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label={t.card}
-        title={t.card}
-        className={`relative flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
-          gold
-            ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
-            : "bg-surface font-medium shadow-sm ring-1 ring-border"
-        }`}
-      >
-        <span>🎟️</span>
-        <span>{lang === "en" ? "Loyalty" : "Fidélité"}</span>
-        {data.loggedIn && (
-          <span
-            className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-bold text-white ${
-              data.rewardReady ? "bg-emerald-500" : "bg-brand"
-            }`}
-          >
-            {data.rewardReady ? "🎁" : points}
-          </span>
-        )}
-      </button>
+      {!hideTrigger && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={t.card}
+          title={t.card}
+          className={`relative flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
+            gold
+              ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
+              : "bg-surface font-medium shadow-sm ring-1 ring-border"
+          }`}
+        >
+          <span>🎟️</span>
+          <span>{lang === "en" ? "Loyalty" : "Fidélité"}</span>
+          {data.loggedIn && (
+            <span
+              className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-bold text-white ${
+                data.rewardReady ? "bg-emerald-500" : "bg-brand"
+              }`}
+            >
+              {data.rewardReady ? "🎁" : points}
+            </span>
+          )}
+        </button>
+      )}
 
       {open &&
         (data.loggedIn ? (

@@ -12,6 +12,7 @@ import { CartBar } from "./CartBar";
 import { GiftWheel } from "./GiftWheel";
 import { LoyaltyCard } from "./LoyaltyCard";
 import { ServiceButtons } from "./ServiceButtons";
+import { ActionsHub } from "./ActionsHub";
 import { FeedbackButton } from "./FeedbackButton";
 import { initTrack } from "@/lib/track";
 import { themeStyle } from "@/lib/themes";
@@ -51,8 +52,10 @@ function MenuBody({
   const [active, setActive] = useState(categories[0]?.id ?? "");
   const [openDish, setOpenDish] = useState<DishDTO | null>(null);
   const [openFormule, setOpenFormule] = useState<FormuleDTO | null>(null);
-  // Hub du logo : révèle Fidélité / Cadeaux / Addition en doré autour du logo.
+  // Page « accès rapides » ouverte par le logo (logo au centre, 3 choix autour).
   const [hubOpen, setHubOpen] = useState(false);
+  const [loyaltyOpen, setLoyaltyOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
   // Écran d'accueil Boire/Manger : le choix vient de l'URL (?vue=…), pas d'un
   // état JS → fonctionne même si l'hydratation du navigateur échoue (Safari).
   const mealChoice = initialView;
@@ -166,10 +169,10 @@ function MenuBody({
                 )}
               </div>
 
-              {/* Logo cliquable — ouvre les accès rapides (Fidélité / Cadeaux / Addition) */}
+              {/* Logo cliquable — ouvre la page des accès (Fidélité / Cadeaux / Addition) */}
               <div className="flex flex-col items-center">
                 <button
-                  onClick={() => setHubOpen((v) => !v)}
+                  onClick={() => setHubOpen(true)}
                   aria-label={lang === "en" ? "Quick access" : "Accès rapides"}
                   className="rounded-[20px] ring-2 ring-brand/50 ring-offset-4 ring-offset-bg transition active:scale-95"
                 >
@@ -187,39 +190,21 @@ function MenuBody({
                   )}
                 </button>
 
-                {/* Accès rapides : indiqués en doré, révélés au clic sur le logo */}
-                {(menu.loyalty.enabled || gift.enabled || tableNumber != null) &&
-                  (hubOpen ? (
-                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 animate-fade-in">
-                      {menu.loyalty.enabled && (
-                        <LoyaltyCard restaurantId={restaurant.id} gold />
-                      )}
-                      {gift.enabled && (
-                        <GiftWheel restaurantId={restaurant.id} gift={gift} gold />
-                      )}
-                      {tableNumber != null && (
-                        <ServiceButtons
-                          restaurantId={restaurant.id}
-                          tableNumber={tableNumber}
-                          showWaiter={false}
-                          gold
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setHubOpen(true)}
-                      className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand/80"
-                    >
-                      {[
-                        menu.loyalty.enabled && `🎟️ ${lang === "en" ? "Loyalty" : "Fidélité"}`,
-                        gift.enabled && `🎡 ${lang === "en" ? "Rewards" : "Cadeaux"}`,
-                        tableNumber != null && `🧾 ${lang === "en" ? "Bill" : "Addition"}`,
-                      ]
-                        .filter(Boolean)
-                        .join("  ·  ")}
-                    </button>
-                  ))}
+                {/* Indication dorée des accès (le logo mène à la page dédiée) */}
+                {(menu.loyalty.enabled || gift.enabled || tableNumber != null) && (
+                  <button
+                    onClick={() => setHubOpen(true)}
+                    className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand/80"
+                  >
+                    {[
+                      menu.loyalty.enabled && `🎟️ ${lang === "en" ? "Loyalty" : "Fidélité"}`,
+                      gift.enabled && `🎡 ${lang === "en" ? "Rewards" : "Cadeaux"}`,
+                      tableNumber != null && `🧾 ${lang === "en" ? "Bill" : "Addition"}`,
+                    ]
+                      .filter(Boolean)
+                      .join("  ·  ")}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -510,6 +495,45 @@ function MenuBody({
             restaurantName={restaurant.name}
             logoUrl={restaurant.logoUrl}
             lang={lang}
+          />
+        )}
+
+        {/* Fenêtres pilotées depuis la page d'accès (déclencheurs masqués) */}
+        {menu.loyalty.enabled && (
+          <LoyaltyCard
+            restaurantId={restaurant.id}
+            hideTrigger
+            open={loyaltyOpen}
+            onOpenChange={setLoyaltyOpen}
+          />
+        )}
+        <GiftWheel
+          restaurantId={restaurant.id}
+          gift={gift}
+          hideTrigger
+          open={wheelOpen}
+          onOpenChange={setWheelOpen}
+        />
+
+        {/* Page « accès rapides » : logo au centre, 3 choix autour */}
+        {hubOpen && (
+          <ActionsHub
+            logoUrl={restaurant.logoUrl}
+            name={restaurant.name}
+            lang={lang}
+            restaurantId={restaurant.id}
+            tableNumber={tableNumber}
+            loyaltyEnabled={menu.loyalty.enabled}
+            giftEnabled={gift.enabled}
+            onClose={() => setHubOpen(false)}
+            onLoyalty={() => {
+              setHubOpen(false);
+              setLoyaltyOpen(true);
+            }}
+            onWheel={() => {
+              setHubOpen(false);
+              setWheelOpen(true);
+            }}
           />
         )}
 

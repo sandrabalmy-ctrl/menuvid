@@ -15,9 +15,12 @@ export function LogoRing({
 }) {
   const [tl, tr, bl, br] = items;
 
-  const textCls =
-    "cursor-pointer uppercase tracking-[0.22em] font-semibold active:opacity-70";
-  const style = { fontSize: "12px", fill: "var(--brand)" } as const;
+  const textCls = "cursor-pointer uppercase font-semibold active:opacity-70";
+  const style = {
+    fontSize: "11px",
+    fill: "var(--brand)",
+    letterSpacing: "1.5px",
+  } as const;
 
   return (
     <div className="relative mx-auto h-64 w-64">
@@ -55,28 +58,28 @@ export function LogoRing({
         </defs>
 
         {tl && (
-          <text className={textCls} style={style} onClick={tl.onClick}>
+          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={tl.onClick}>
             <textPath href="#ringTop" startOffset="25%" textAnchor="middle">
               {tl.label}
             </textPath>
           </text>
         )}
         {tr && (
-          <text className={textCls} style={style} onClick={tr.onClick}>
+          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={tr.onClick}>
             <textPath href="#ringTop" startOffset="75%" textAnchor="middle">
               {tr.label}
             </textPath>
           </text>
         )}
         {bl && (
-          <text className={textCls} style={style} onClick={bl.onClick}>
+          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={bl.onClick}>
             <textPath href="#ringBot" startOffset="25%" textAnchor="middle">
               {bl.label}
             </textPath>
           </text>
         )}
         {br && (
-          <text className={textCls} style={style} onClick={br.onClick}>
+          <text className={textCls} style={style} textLength={96} lengthAdjust="spacing" onClick={br.onClick}>
             <textPath href="#ringBot" startOffset="75%" textAnchor="middle">
               {br.label}
             </textPath>

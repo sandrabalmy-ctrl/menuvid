@@ -77,9 +77,11 @@ function MiniWheel() {
 export function GiftWheel({
   restaurantId,
   gift,
+  gold = false,
 }: {
   restaurantId: string;
   gift: GiftConfig;
+  gold?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { lang, t } = useLang();
@@ -91,7 +93,11 @@ export function GiftWheel({
         onClick={() => setOpen(true)}
         aria-label={t("giftCta")}
         title={t("giftCta")}
-        className="flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-border transition active:scale-95"
+        className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
+          gold
+            ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
+            : "bg-surface font-medium shadow-sm ring-1 ring-border"
+        }`}
       >
         <MiniWheel />
         <span>{lang === "en" ? "Rewards" : "Cadeaux"}</span>

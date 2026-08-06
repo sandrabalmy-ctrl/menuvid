@@ -52,7 +52,13 @@ const S = {
 
 type Strings = (typeof S)["fr"];
 
-export function LoyaltyCard({ restaurantId }: { restaurantId: string }) {
+export function LoyaltyCard({
+  restaurantId,
+  gold = false,
+}: {
+  restaurantId: string;
+  gold?: boolean;
+}) {
   const { lang } = useLang();
   const t = S[lang];
   const [data, setData] = useState<Status | null>(null);
@@ -80,7 +86,11 @@ export function LoyaltyCard({ restaurantId }: { restaurantId: string }) {
         onClick={() => setOpen(true)}
         aria-label={t.card}
         title={t.card}
-        className="relative flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-border transition active:scale-95"
+        className={`relative flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
+          gold
+            ? "border border-brand/60 bg-brand/10 text-brand ring-1 ring-brand/30"
+            : "bg-surface font-medium shadow-sm ring-1 ring-border"
+        }`}
       >
         <span>🎟️</span>
         <span>{lang === "en" ? "Loyalty" : "Fidélité"}</span>

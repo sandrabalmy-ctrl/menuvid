@@ -51,6 +51,8 @@ function MenuBody({
   const [active, setActive] = useState(categories[0]?.id ?? "");
   const [openDish, setOpenDish] = useState<DishDTO | null>(null);
   const [openFormule, setOpenFormule] = useState<FormuleDTO | null>(null);
+  // Hub du logo : révèle Fidélité / Cadeaux / Addition en doré autour du logo.
+  const [hubOpen, setHubOpen] = useState(false);
   // Écran d'accueil Boire/Manger : le choix vient de l'URL (?vue=…), pas d'un
   // état JS → fonctionne même si l'hydratation du navigateur échoue (Safari).
   const mealChoice = initialView;
@@ -164,21 +166,61 @@ function MenuBody({
                 )}
               </div>
 
-              {/* Logo centré (ou nom du restaurant si pas de logo) */}
-              {restaurant.logoUrl ? (
-                <div className="flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={restaurant.logoUrl}
-                    alt={restaurant.name}
-                    className="h-24 w-24 rounded-2xl object-contain shadow-lg shadow-black/40"
-                  />
-                </div>
-              ) : (
-                <h1 className="font-display text-4xl font-semibold leading-tight">
-                  {restaurant.name}
-                </h1>
-              )}
+              {/* Logo cliquable — ouvre les accès rapides (Fidélité / Cadeaux / Addition) */}
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => setHubOpen((v) => !v)}
+                  aria-label={lang === "en" ? "Quick access" : "Accès rapides"}
+                  className="rounded-[20px] ring-2 ring-brand/50 ring-offset-4 ring-offset-bg transition active:scale-95"
+                >
+                  {restaurant.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={restaurant.logoUrl}
+                      alt={restaurant.name}
+                      className="h-24 w-24 rounded-2xl object-contain shadow-lg shadow-black/40"
+                    />
+                  ) : (
+                    <span className="block px-5 py-3 font-display text-4xl font-semibold text-brand">
+                      {restaurant.name}
+                    </span>
+                  )}
+                </button>
+
+                {/* Accès rapides : indiqués en doré, révélés au clic sur le logo */}
+                {(menu.loyalty.enabled || gift.enabled || tableNumber != null) &&
+                  (hubOpen ? (
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 animate-fade-in">
+                      {menu.loyalty.enabled && (
+                        <LoyaltyCard restaurantId={restaurant.id} gold />
+                      )}
+                      {gift.enabled && (
+                        <GiftWheel restaurantId={restaurant.id} gift={gift} gold />
+                      )}
+                      {tableNumber != null && (
+                        <ServiceButtons
+                          restaurantId={restaurant.id}
+                          tableNumber={tableNumber}
+                          showWaiter={false}
+                          gold
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setHubOpen(true)}
+                      className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand/80"
+                    >
+                      {[
+                        menu.loyalty.enabled && `🎟️ ${lang === "en" ? "Loyalty" : "Fidélité"}`,
+                        gift.enabled && `🎡 ${lang === "en" ? "Rewards" : "Cadeaux"}`,
+                        tableNumber != null && `🧾 ${lang === "en" ? "Bill" : "Addition"}`,
+                      ]
+                        .filter(Boolean)
+                        .join("  ·  ")}
+                    </button>
+                  ))}
+              </div>
             </div>
 
             {/* Message d'accueil — calligraphie romantique, avant les actions */}
@@ -197,14 +239,6 @@ function MenuBody({
                 </div>
               </div>
             )}
-
-            {/* Actions : fidélité + cadeaux (centrées) */}
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {menu.loyalty.enabled && (
-                <LoyaltyCard restaurantId={restaurant.id} />
-              )}
-              <GiftWheel restaurantId={restaurant.id} gift={gift} />
-            </div>
 
             {menu.orderingPaused ? (
               <p className="mt-3 rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-medium text-amber-700">
@@ -226,6 +260,7 @@ function MenuBody({
                 <ServiceButtons
                   restaurantId={restaurant.id}
                   tableNumber={tableNumber}
+                  showBill={false}
                 />
               </div>
             )}

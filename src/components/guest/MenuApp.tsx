@@ -11,7 +11,6 @@ import { IntroScreen } from "./IntroScreen";
 import { CartBar } from "./CartBar";
 import { GiftWheel } from "./GiftWheel";
 import { LoyaltyCard } from "./LoyaltyCard";
-import { ServiceButtons } from "./ServiceButtons";
 import { ActionsHub } from "./ActionsHub";
 import { FeedbackButton } from "./FeedbackButton";
 import { initTrack } from "@/lib/track";
@@ -133,8 +132,6 @@ function MenuBody({
     !diet &&
     !(menu.introEnabled && mealChoice === "boire");
 
-  const welcome = pick(lang, restaurant.welcomeMessage ?? "", restaurant.welcomeMessageEn);
-
   return (
     <CartProvider storageKey={`menuvid:cart:${restaurant.id}:${tableNumber ?? 0}`}>
       <div
@@ -208,23 +205,6 @@ function MenuBody({
               </div>
             </div>
 
-            {/* Message d'accueil — calligraphie romantique, avant les actions */}
-            {welcome && (
-              <div className="mt-5 text-center">
-                <p
-                  className="whitespace-pre-line text-[24px] font-medium italic leading-[1.4] text-white"
-                  style={{ fontFamily: "var(--font-script)" }}
-                >
-                  {welcome}
-                </p>
-                <div className="mt-2 flex items-center justify-center gap-2.5 text-brand/70">
-                  <span className="h-px w-8 bg-brand/40" />
-                  <span className="text-xs">❦</span>
-                  <span className="h-px w-8 bg-brand/40" />
-                </div>
-              </div>
-            )}
-
             {menu.orderingPaused ? (
               <p className="mt-3 rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-medium text-amber-700">
                 ⏸️{" "}
@@ -238,16 +218,6 @@ function MenuBody({
                   {t("consultOnly")}
                 </p>
               )
-            )}
-
-            {tableNumber != null && (
-              <div className="mt-3">
-                <ServiceButtons
-                  restaurantId={restaurant.id}
-                  tableNumber={tableNumber}
-                  showBill={false}
-                />
-              </div>
             )}
 
             {/* Recherche dans la carte */}

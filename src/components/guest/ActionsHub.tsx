@@ -53,15 +53,15 @@ export function ActionsHub({
   onLoyalty: () => void;
   onWheel: () => void;
 }) {
-  const [billSent, setBillSent] = useState(false);
+  const [sent, setSent] = useState<"BILL" | "CALL_WAITER" | null>(null);
 
-  async function askBill() {
-    setBillSent(true);
+  async function ask(type: "BILL" | "CALL_WAITER") {
+    setSent(type);
     try {
       await fetch("/api/service-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId, tableNumber, type: "BILL" }),
+        body: JSON.stringify({ restaurantId, tableNumber, type }),
       });
     } catch {}
   }
@@ -80,8 +80,8 @@ export function ActionsHub({
         {lang === "en" ? "What would you like to do?" : "Que souhaitez-vous faire ?"}
       </p>
 
-      {/* Logo au centre, entouré des 3 choix */}
-      <div className="relative h-72 w-72">
+      {/* Logo au centre, entouré des 4 choix (haut / bas / gauche / droite) */}
+      <div className="relative h-[22rem] w-[22rem]">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -97,6 +97,7 @@ export function ActionsHub({
           )}
         </div>
 
+        {/* Haut : Fidélité */}
         {loyaltyEnabled && (
           <HubItem
             icon="🎟️"
@@ -105,19 +106,38 @@ export function ActionsHub({
             className="left-1/2 top-0 -translate-x-1/2"
           />
         )}
+        {/* Gauche : Cadeaux */}
         {giftEnabled && (
           <HubItem
             icon="🎡"
             label={lang === "en" ? "Rewards" : "Cadeaux"}
             onClick={onWheel}
-            className="bottom-0 left-0"
+            className="left-0 top-1/2 -translate-y-1/2"
           />
         )}
+        {/* Droite : Appeler le serveur */}
         {tableNumber != null && (
           <HubItem
-            icon={billSent ? "✅" : "🧾"}
+            icon={sent === "CALL_WAITER" ? "✅" : "🙋"}
             label={
-              billSent
+              sent === "CALL_WAITER"
+                ? lang === "en"
+                  ? "Coming"
+                  : "En route"
+                : lang === "en"
+                  ? "Waiter"
+                  : "Serveur"
+            }
+            onClick={() => ask("CALL_WAITER")}
+            className="right-0 top-1/2 -translate-y-1/2"
+          />
+        )}
+        {/* Bas : Addition */}
+        {tableNumber != null && (
+          <HubItem
+            icon={sent === "BILL" ? "✅" : "🧾"}
+            label={
+              sent === "BILL"
                 ? lang === "en"
                   ? "Requested"
                   : "Demandée"
@@ -125,8 +145,8 @@ export function ActionsHub({
                   ? "Bill"
                   : "Addition"
             }
-            onClick={askBill}
-            className="bottom-0 right-0"
+            onClick={() => ask("BILL")}
+            className="bottom-0 left-1/2 -translate-x-1/2"
           />
         )}
       </div>

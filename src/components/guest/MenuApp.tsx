@@ -77,7 +77,7 @@ function MenuBody({
   // état JS → fonctionne même si l'hydratation du navigateur échoue (Safari).
   const mealChoice = initialView;
   const [diet, setDiet] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
+  const query = ""; // recherche retirée
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const navRef = useRef<HTMLElement>(null);
   const [navH, setNavH] = useState(96);
@@ -228,17 +228,6 @@ function MenuBody({
               )
             )}
 
-            {/* Recherche dans la carte */}
-            <div className="mt-4">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={
-                  lang === "en" ? "Search a dish…" : "Rechercher un plat…"
-                }
-                className="w-full rounded-full border border-border bg-surface/50 px-5 py-3 text-sm outline-none transition placeholder:text-muted/70 focus:border-brand/50 focus:ring-2 focus:ring-brand/25"
-              />
-            </div>
           </header>
 
           {/* Navigation catégories (sticky) */}
@@ -271,7 +260,7 @@ function MenuBody({
               </div>
             )}
 
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
+            <div className="flex flex-wrap gap-2">
               {showFormules && (
                 <button
                   onClick={() => scrollTo("formules")}
@@ -300,7 +289,7 @@ function MenuBody({
             </div>
 
             {availableDiets.length > 0 && (
-              <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <FilterChip active={diet === null} onClick={() => setDiet(null)}>
                   {t("all")}
                 </FilterChip>

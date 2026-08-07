@@ -35,9 +35,11 @@ export async function POST(req: NextRequest) {
   await db.user.update({
     where: { id: user.id },
     data: {
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       resetTokenHash: null,
       resetTokenExpiry: null,
+      // Invalide toutes les sessions ouvertes (un jeton volé cesse de marcher).
+      sessionEpoch: { increment: 1 },
     },
   });
 

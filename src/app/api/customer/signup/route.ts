@@ -3,9 +3,18 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { createCustomerSession } from "@/lib/customer-auth";
 import { validatePassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // POST /api/customer/signup — création d'un compte client (fidélité).
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (!checkRateLimit(`signup:${ip}`, 10, 15 * 60 * 1000).allowed) {
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez plus tard." },
+      { status: 429 }
+    );
+  }
+
   const { email, password, name } = await req.json().catch(() => ({}));
   const cleanEmail = String(email ?? "").toLowerCase().trim();
 
@@ -27,7 +36,7 @@ export async function POST(req: NextRequest) {
   const customer = await db.customer.create({
     data: {
       email: cleanEmail,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       name: name ? String(name).slice(0, 60) : null,
     },
   });

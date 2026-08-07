@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { saveUpload, extForType } from "@/lib/storage";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX = 10 * 1024 * 1024; // 10 Mo
 
 // POST /api/review-proof (multipart: file + restaurantId) — le convive envoie
 // la capture d'écran de son avis Google pour débloquer la roue. Public.
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (!checkRateLimit(`proof:${ip}`, 15, 15 * 60 * 1000).allowed) {
+    return NextResponse.json(
+      { error: "Trop d'envois. Réessayez plus tard." },
+      { status: 429 }
+    );
+  }
+
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   const restaurantId = String(form?.get("restaurantId") ?? "");

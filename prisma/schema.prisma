@@ -108,6 +108,11 @@ model User {
   role         String   @default("OWNER") // OWNER | STAFF | SUPERADMIN
   createdAt    DateTime @default(now())
 
+  // Révocation de session : incrémenté pour invalider TOUS les jetons émis
+  // (déconnexion partout, changement de mot de passe). Un jeton dont l'« ep »
+  // ne correspond plus est refusé.
+  sessionEpoch Int      @default(0)
+
   // Réinitialisation de mot de passe (jeton haché + expiration)
   resetTokenHash   String?
   resetTokenExpiry DateTime?

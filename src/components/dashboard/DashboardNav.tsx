@@ -59,6 +59,18 @@ export function DashboardNav({
     router.refresh();
   }
 
+  async function logoutEverywhere() {
+    if (
+      !confirm(
+        "Déconnecter cet appareil ET tous les autres (téléphones, ordinateurs) ? À utiliser en cas de perte ou de vol."
+      )
+    )
+      return;
+    await fetch("/api/auth/logout-all", { method: "POST" });
+    router.push("/connexion");
+    router.refresh();
+  }
+
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
@@ -132,6 +144,15 @@ export function DashboardNav({
           >
             Déconnexion
           </button>
+          {isOwner && (
+            <button
+              onClick={logoutEverywhere}
+              title="Déconnecter tous les appareils (perte / vol)"
+              className="rounded-lg bg-surface px-3 py-1.5 text-sm text-muted hover:text-text"
+            >
+              Partout
+            </button>
+          )}
         </div>
       </header>
 

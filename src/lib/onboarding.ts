@@ -49,7 +49,7 @@ export async function provisionRestaurant(input: {
       users: {
         create: {
           email: input.ownerEmail.toLowerCase().trim(),
-          passwordHash: await bcrypt.hash(input.ownerPassword, 10),
+          passwordHash: await bcrypt.hash(input.ownerPassword, 12),
           role: "OWNER",
         },
       },

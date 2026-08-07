@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
+import { db } from "@/lib/db";
 
 // ============================================================================
 //  Authentification restaurateur — session signée dans un cookie httpOnly.
@@ -21,7 +22,9 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(raw);
 }
 
-export type Session = { uid: string; rid: string | null; role: string };
+// `ep` = version de session (epoch) figée dans le jeton ; comparée à celle en
+// base pour permettre la révocation (déconnexion partout / reset mot de passe).
+export type Session = { uid: string; rid: string | null; role: string; ep?: number };
 
 export async function createSession(s: Session) {
   const token = await new SignJWT(s)
@@ -47,7 +50,14 @@ export async function getSession(): Promise<Session | null> {
     const { payload } = await jwtVerify(token, getSecret(), {
       algorithms: ["HS256"],
     });
-    return payload as unknown as Session;
+    const session = payload as unknown as Session;
+    // Révocation : le jeton n'est valable que si son epoch correspond à la base.
+    const user = await db.user.findUnique({
+      where: { id: session.uid },
+      select: { sessionEpoch: true },
+    });
+    if (!user || (session.ep ?? 0) !== user.sessionEpoch) return null;
+    return session;
   } catch {
     return null;
   }

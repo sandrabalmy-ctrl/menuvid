@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     uid: user.id,
     rid: user.restaurantId ?? null,
     role: user.role,
+    ep: user.sessionEpoch,
   });
   return NextResponse.json({ ok: true, role: user.role });
 }

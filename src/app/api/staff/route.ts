@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     data: {
       restaurantId: session.rid,
       email: cleanEmail,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       role: r,
     },
   });

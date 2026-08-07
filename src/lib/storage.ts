@@ -30,12 +30,25 @@ export function extForType(type: string): string | null {
   return EXT_BY_TYPE[type] ?? null;
 }
 
+// Répertoire de stockage persistant (volume Railway) si défini, ex.
+// MEDIA_DIR=/app/data/uploads. Servi par la route /media/[...].
+// Sinon (dev/local) : public/uploads, servi statiquement à /uploads.
+const MEDIA_DIR = process.env.MEDIA_DIR;
+
 export async function saveUpload(opts: {
   data: Buffer;
   ext: string;
   restaurantId: string;
 }): Promise<string> {
   const filename = `${randomUUID()}.${opts.ext}`;
+
+  if (MEDIA_DIR) {
+    const dir = path.join(MEDIA_DIR, opts.restaurantId);
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, filename), opts.data);
+    return `/media/${opts.restaurantId}/${filename}`;
+  }
+
   const dir = path.join(process.cwd(), "public", "uploads", opts.restaurantId);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), opts.data);

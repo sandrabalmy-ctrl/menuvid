@@ -14,7 +14,13 @@ export async function GET() {
 
   const orders = await db.order.findMany({
     where: { restaurantId: session.rid, paid: true, paidAt: { gte: start } },
-    select: { totalCents: true, tipCents: true, paymentMethod: true, source: true },
+    select: {
+      totalCents: true,
+      tipCents: true,
+      discountCents: true,
+      paymentMethod: true,
+      source: true,
+    },
   });
 
   const sum = (f: (o: (typeof orders)[number]) => number) =>
@@ -38,5 +44,7 @@ export async function GET() {
     cashCents: cash,
     cardCents: card,
     onlineCents: online,
+    tipsCents: sum((o) => o.tipCents),
+    discountCents: sum((o) => o.discountCents),
   });
 }

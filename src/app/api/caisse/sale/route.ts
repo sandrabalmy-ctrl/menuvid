@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
   }[] = Array.isArray(body.items) ? body.items : [];
   const paymentMethod = body.paymentMethod === "CARD" ? "CARD" : "CASH";
   const amountReceivedCents = Math.max(0, Math.round(Number(body.amountReceivedCents) || 0));
+  const tipCents = Math.max(0, Math.round(Number(body.tipCents) || 0));
+  const discountPct = Math.min(100, Math.max(0, Math.round(Number(body.discountPct) || 0)));
 
   if (items.length === 0) {
     return NextResponse.json({ error: "Ticket vide" }, { status: 400 });
@@ -52,10 +54,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Aucun article valide" }, { status: 400 });
   }
 
-  const totalCents = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  // Sous-total des articles, puis remise (%) et pourboire.
+  const subtotalCents = lines.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0);
+  const discountCents = Math.round((subtotalCents * discountPct) / 100);
+  const totalCents = subtotalCents - discountCents; // articles après remise
+  const dueCents = totalCents + tipCents; // montant réellement encaissé
   const changeCents =
-    paymentMethod === "CASH" && amountReceivedCents > totalCents
-      ? amountReceivedCents - totalCents
+    paymentMethod === "CASH" && amountReceivedCents > dueCents
+      ? amountReceivedCents - dueCents
       : 0;
 
   const order = await db.order.create({
@@ -63,6 +69,8 @@ export async function POST(req: NextRequest) {
       restaurantId: session.rid,
       status: "SERVED",
       totalCents,
+      tipCents,
+      discountCents,
       paid: true,
       paidAt: new Date(),
       paymentMethod,
@@ -79,7 +87,11 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     orderId: order.id,
+    subtotalCents,
+    discountCents,
+    tipCents,
     totalCents,
+    dueCents,
     paymentMethod,
     amountReceivedCents,
     changeCents,

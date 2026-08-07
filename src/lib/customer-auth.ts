@@ -7,9 +7,15 @@ import { SignJWT, jwtVerify } from "jose";
 // ============================================================================
 
 const COOKIE = "mv_customer";
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "dev-secret-a-changer-en-production-please"
-);
+
+// Même exigence que la session restaurateur : aucun secret par défaut.
+function getSecret(): Uint8Array {
+  const raw = process.env.AUTH_SECRET;
+  if (!raw) {
+    throw new Error("AUTH_SECRET manquant. Définissez une clé secrète forte.");
+  }
+  return new TextEncoder().encode(raw);
+}
 
 export type CustomerSession = { cid: string; email: string };
 
@@ -18,7 +24,7 @@ export async function createCustomerSession(s: CustomerSession) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("180d")
-    .sign(secret);
+    .sign(getSecret());
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
@@ -34,7 +40,9 @@ export async function getCustomerSession(): Promise<CustomerSession | null> {
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret(), {
+      algorithms: ["HS256"],
+    });
     return payload as unknown as CustomerSession;
   } catch {
     return null;

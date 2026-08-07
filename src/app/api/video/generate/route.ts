@@ -9,7 +9,7 @@ import { getVideoProvider } from "@/lib/video";
 // vrai service d'IA image→vidéo.
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session?.rid) {
+  if (!session?.rid || session.role === "KITCHEN") {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 
 async function ownCategory(id: string) {
   const session = await getSession();
-  if (!session?.rid) return { error: 401 as const };
+  if (!session?.rid || session.role === "KITCHEN") return { error: 401 as const };
   const cat = await db.category.findUnique({ where: { id } });
   if (!cat || cat.restaurantId !== session.rid) return { error: 404 as const };
   return { session, cat };

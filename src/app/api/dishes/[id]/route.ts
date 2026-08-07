@@ -6,7 +6,7 @@ import { buildDishData } from "@/lib/dish-input";
 // Vérifie que le plat existe ET appartient au restaurant connecté.
 async function ownDish(id: string) {
   const session = await getSession();
-  if (!session?.rid) return { error: 401 as const };
+  if (!session?.rid || session.role === "KITCHEN") return { error: 401 as const };
   const dish = await db.dish.findUnique({ where: { id } });
   if (!dish || dish.restaurantId !== session.rid) return { error: 404 as const };
   return { session, dish };

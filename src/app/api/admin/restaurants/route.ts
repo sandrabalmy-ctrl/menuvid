@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { provisionRestaurant } from "@/lib/onboarding";
 import { isPlan } from "@/lib/billing";
+import { validatePassword } from "@/lib/password";
 
 // POST /api/admin/restaurants — crée un nouveau restaurant client (onboarding).
 export async function POST(req: NextRequest) {
@@ -17,11 +18,15 @@ export async function POST(req: NextRequest) {
   const ownerPassword = String(body.ownerPassword ?? "");
   const plan = isPlan(body.plan) ? body.plan : "VIDEO";
 
-  if (!name || !ownerEmail || ownerPassword.length < 6) {
+  if (!name || !ownerEmail) {
     return NextResponse.json(
-      { error: "Nom, email et mot de passe (6+ caractères) requis." },
+      { error: "Nom et email requis." },
       { status: 400 }
     );
+  }
+  const pw = validatePassword(ownerPassword);
+  if (!pw.ok) {
+    return NextResponse.json({ error: pw.error }, { status: 400 });
   }
   const exists = await db.user.findUnique({
     where: { email: ownerEmail.toLowerCase() },

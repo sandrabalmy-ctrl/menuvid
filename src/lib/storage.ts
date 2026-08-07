@@ -22,10 +22,12 @@ const EXT_BY_TYPE: Record<string, string> = {
   "video/webm": "webm",
 };
 
-export function extForType(type: string, fallbackName = ""): string {
-  if (EXT_BY_TYPE[type]) return EXT_BY_TYPE[type];
-  const fromName = fallbackName.split(".").pop()?.toLowerCase();
-  return fromName && fromName.length <= 4 ? fromName : "bin";
+// Extension déduite UNIQUEMENT du type reconnu (liste blanche). On n'utilise
+// jamais le nom de fichier fourni par le client : un fichier nommé « x.html »
+// pourrait sinon être servi comme page et exécuter du code (XSS stocké).
+// Renvoie null si le type n'est pas dans la liste → l'appelant doit refuser.
+export function extForType(type: string): string | null {
+  return EXT_BY_TYPE[type] ?? null;
 }
 
 export async function saveUpload(opts: {

@@ -9,7 +9,8 @@ const MAX_VIDEO = 60 * 1024 * 1024; // 60 Mo
 // Renvoie { url, kind } ; l'URL est ensuite enregistrée sur le plat.
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session?.rid) {
+  // Gestion du menu/média : propriétaire ou salle (pas la cuisine).
+  if (!session?.rid || session.role === "KITCHEN") {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -40,8 +41,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Extension issue de la liste blanche (jamais du nom de fichier client).
+  const ext = extForType(file.type);
+  if (!ext) {
+    return NextResponse.json(
+      { error: "Format non supporté." },
+      { status: 400 }
+    );
+  }
   const data = Buffer.from(await file.arrayBuffer());
-  const ext = extForType(file.type, file.name);
   const url = await saveUpload({ data, ext, restaurantId: session.rid });
 
   return NextResponse.json({ url, kind: isImage ? "image" : "video" });

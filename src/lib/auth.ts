@@ -8,9 +8,18 @@ import { SignJWT, jwtVerify } from "jose";
 // ============================================================================
 
 const COOKIE = "mv_session";
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "dev-secret-a-changer-en-production-please"
-);
+
+// Le secret de signature DOIT venir de l'environnement. Pas de valeur par
+// défaut : sans secret configuré, on refuse plutôt que de signer avec une clé
+// publique (qui permettrait de forger un cookie « SUPERADMIN »). Lu à la volée
+// pour ne pas faire échouer le build.
+function getSecret(): Uint8Array {
+  const raw = process.env.AUTH_SECRET;
+  if (!raw) {
+    throw new Error("AUTH_SECRET manquant. Définissez une clé secrète forte.");
+  }
+  return new TextEncoder().encode(raw);
+}
 
 export type Session = { uid: string; rid: string | null; role: string };
 
@@ -19,7 +28,7 @@ export async function createSession(s: Session) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
-    .sign(secret);
+    .sign(getSecret());
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
@@ -35,7 +44,9 @@ export async function getSession(): Promise<Session | null> {
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret(), {
+      algorithms: ["HS256"],
+    });
     return payload as unknown as Session;
   } catch {
     return null;

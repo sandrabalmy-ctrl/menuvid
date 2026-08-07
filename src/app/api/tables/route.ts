@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth";
 // POST /api/tables — ajoute une table (numéro suivant automatique).
 export async function POST() {
   const session = await getSession();
-  if (!session?.rid) {
+  if (!session?.rid || session.role === "KITCHEN") {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   const last = await db.diningTable.findFirst({

@@ -22,6 +22,8 @@ export const ALLERGENS: Record<string, Entry> = {
 export const DIETS: Record<string, Entry> = {
   vegetarien: { label: "Végétarien", en: "Vegetarian", icon: "🥗" },
   vegan: { label: "Vegan", en: "Vegan", icon: "🌱" },
+  // Filtre regroupé (végétarien + vegan) — utilisé par la carte convive.
+  veg: { label: "Veg", en: "Veggie", icon: "🌱" },
   "sans-gluten": { label: "Sans gluten", en: "Gluten-free", icon: "🚫🌾" },
   halal: { label: "Halal", en: "Halal", icon: "☪️" },
 };

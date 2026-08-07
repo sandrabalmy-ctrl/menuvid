@@ -99,7 +99,13 @@ function MenuBody({
   const availableDiets = useMemo(() => {
     const set = new Set<string>();
     categories.forEach((c) => c.dishes.forEach((d) => d.diets.forEach((x) => set.add(x))));
-    return [...set];
+    // On regroupe « végétarien » et « vegan » sous un seul filtre « Veg ».
+    const hasVeg = set.has("vegetarien") || set.has("vegan");
+    set.delete("vegetarien");
+    set.delete("vegan");
+    const list = [...set];
+    if (hasVeg) list.unshift("veg");
+    return list;
   }, [categories]);
 
   const visibleCategories = useMemo(() => {
@@ -114,7 +120,14 @@ function MenuBody({
       .map((c) => ({
         ...c,
         dishes: c.dishes.filter((d) => {
-          if (diet && !d.diets.includes(diet)) return false;
+          if (diet) {
+            // « veg » = végétarien OU vegan ; sinon correspondance directe.
+            const ok =
+              diet === "veg"
+                ? d.diets.includes("vegetarien") || d.diets.includes("vegan")
+                : d.diets.includes(diet);
+            if (!ok) return false;
+          }
           if (!q) return true;
           const name = pick(lang, d.name, d.nameEn).toLowerCase();
           const desc = pick(lang, d.description, d.descriptionEn).toLowerCase();

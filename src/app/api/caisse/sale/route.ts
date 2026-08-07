@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { parseOptions, resolveOptions } from "@/lib/options";
+import { vatBreakdown } from "@/lib/vat";
 
 // POST /api/caisse/sale — encaissement au comptoir (vente payée immédiatement).
 // Réservé au patron / à la salle (pas la cuisine).
@@ -28,9 +29,11 @@ export async function POST(req: NextRequest) {
 
   // Prix recalculés côté serveur (jamais ceux envoyés par le client).
   const dishIds = [...new Set(items.map((i) => i.dishId))];
-  const dishes = await db.dish.findMany({
-    where: { id: { in: dishIds }, restaurantId: session.rid },
-  });
+  const [dishes, restaurant] = await Promise.all([
+    db.dish.findMany({ where: { id: { in: dishIds }, restaurantId: session.rid } }),
+    db.restaurant.findUnique({ where: { id: session.rid }, select: { vatPermille: true } }),
+  ]);
+  const defaultVat = restaurant?.vatPermille ?? 0;
   const byId = new Map(dishes.map((d) => [d.id, d]));
 
   const lines = [];
@@ -48,6 +51,7 @@ export async function POST(req: NextRequest) {
       unitPriceCents: dish.priceCents + priceDelta,
       optionsText: text || null,
       quantity: qty,
+      vatPermille: dish.vatPermille ?? defaultVat,
     });
   }
   if (lines.length === 0) {
@@ -85,6 +89,11 @@ export async function POST(req: NextRequest) {
     data: lines.map((l) => ({ restaurantId: session.rid!, dishId: l.dishId, type: "ORDER" })),
   });
 
+  const vat = vatBreakdown(
+    lines.map((l) => ({ amountCents: l.unitPriceCents * l.quantity, vatPermille: l.vatPermille })),
+    discountCents
+  );
+
   return NextResponse.json({
     orderId: order.id,
     subtotalCents,
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
     tipCents,
     totalCents,
     dueCents,
+    vat,
     paymentMethod,
     amountReceivedCents,
     changeCents,

@@ -29,7 +29,13 @@ export async function PATCH(req: NextRequest) {
     loyaltyEnabled?: boolean;
     loyaltyThreshold?: number;
     loyaltyReward?: string;
+    vatPermille?: number;
   } = {};
+
+  if (body.vatPermille !== undefined) {
+    const n = Math.round(Number(body.vatPermille));
+    if (n >= 0 && n <= 500) data.vatPermille = n; // 0 à 50 %
+  }
 
   if (typeof body.loyaltyEnabled === "boolean") {
     data.loyaltyEnabled = body.loyaltyEnabled;

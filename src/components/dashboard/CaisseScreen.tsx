@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
+import { formatVatRate } from "@/lib/vat";
 
 type Dish = { id: string; name: string; priceCents: number };
 type Category = { id: string; name: string; dishes: Dish[] };
 type Line = { dishId: string; name: string; priceCents: number; qty: number };
 
+type VatBucket = { permille: number; ttcCents: number; vatCents: number; htCents: number };
 type ReceiptItem = { name: string; quantity: number; unitPriceCents: number };
 type Receipt = {
   subtotalCents: number;
@@ -14,6 +16,7 @@ type Receipt = {
   tipCents: number;
   totalCents: number;
   dueCents: number;
+  vat: VatBucket[];
   paymentMethod: string;
   amountReceivedCents: number;
   changeCents: number;
@@ -31,6 +34,18 @@ type OpenOrder = {
   items: { name: string; quantity: number; unitPriceCents: number }[];
 };
 
+type Sale = {
+  id: string;
+  totalCents: number;
+  tipCents: number;
+  paymentMethod: string | null;
+  source: string;
+  tableNumber: number | null;
+  paidAt: string;
+  refunded: boolean;
+  items: { name: string; quantity: number }[];
+};
+
 type Today = {
   count: number;
   counterCount: number;
@@ -40,9 +55,19 @@ type Today = {
   onlineCents: number;
   tipsCents: number;
   discountCents: number;
+  vat: VatBucket[];
+  refundedCount: number;
+  refundedCents: number;
 };
 
-// Ce que le PayModal renvoie au serveur (sale ou pay/[id]).
+type CashSess = {
+  id: string;
+  openingCents: number;
+  openedAt: string;
+  cashSalesCents: number;
+  expectedCents: number;
+} | null;
+
 type PayPayload = {
   paymentMethod: "CASH" | "CARD";
   amountReceivedCents: number;
@@ -53,13 +78,17 @@ type PayPayload = {
 export function CaisseScreen({
   currency,
   restaurantName,
+  vatPermille,
+  isOwner,
   categories,
 }: {
   currency: string;
   restaurantName: string;
+  vatPermille: number;
+  isOwner: boolean;
   categories: Category[];
 }) {
-  const [mode, setMode] = useState<"COUNTER" | "TABLES">("COUNTER");
+  const [mode, setMode] = useState<"COUNTER" | "TABLES" | "HISTORY">("COUNTER");
   const [activeCat, setActiveCat] = useState(categories[0]?.id ?? "");
   const [lines, setLines] = useState<Line[]>([]);
   const [pay, setPay] = useState<{
@@ -69,6 +98,10 @@ export function CaisseScreen({
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [cloture, setCloture] = useState<Today | null>(null);
   const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [cashOpen, setCashOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [vatRate, setVatRate] = useState(vatPermille);
 
   const total = useMemo(
     () => lines.reduce((s, l) => s + l.priceCents * l.qty, 0),
@@ -79,21 +112,26 @@ export function CaisseScreen({
     const r = await fetch("/api/caisse/open-orders", { cache: "no-store" });
     if (r.ok) setOpenOrders((await r.json()).orders ?? []);
   }, []);
+  const loadSales = useCallback(async () => {
+    const r = await fetch("/api/caisse/sales", { cache: "no-store" });
+    if (r.ok) setSales((await r.json()).sales ?? []);
+  }, []);
 
-  // Sonde en continu les commandes de table restant à encaisser (badge).
   useEffect(() => {
     loadOpen();
     const t = setInterval(loadOpen, 10000);
     return () => clearInterval(t);
   }, [loadOpen]);
 
+  useEffect(() => {
+    if (mode === "HISTORY") loadSales();
+  }, [mode, loadSales]);
+
   function add(d: Dish) {
     setLines((prev) => {
       const ex = prev.find((l) => l.dishId === d.id);
       if (ex)
-        return prev.map((l) =>
-          l.dishId === d.id ? { ...l, qty: l.qty + 1 } : l
-        );
+        return prev.map((l) => (l.dishId === d.id ? { ...l, qty: l.qty + 1 } : l));
       return [...prev, { dishId: d.id, name: d.name, priceCents: d.priceCents, qty: 1 }];
     });
   }
@@ -105,7 +143,6 @@ export function CaisseScreen({
     );
   }
 
-  // Encaissement d'un ticket comptoir → /api/caisse/sale
   function payCounter() {
     setPay({
       subtotalCents: total,
@@ -134,7 +171,6 @@ export function CaisseScreen({
     });
   }
 
-  // Encaissement d'une commande de table existante → /api/caisse/pay/[id]
   function payOrder(o: OpenOrder) {
     setPay({
       subtotalCents: o.totalCents,
@@ -152,37 +188,59 @@ export function CaisseScreen({
     });
   }
 
+  async function refund(sale: Sale) {
+    if (
+      !confirm(
+        `Rembourser cette vente de ${formatPrice(
+          sale.totalCents + sale.tipCents,
+          currency
+        )} ? Cette action est définitive.`
+      )
+    )
+      return;
+    const res = await fetch(`/api/caisse/refund/${sale.id}`, { method: "POST" });
+    if (res.ok) loadSales();
+    else alert((await res.json().catch(() => ({}))).error ?? "Échec du remboursement");
+  }
+
   const cat = categories.find((c) => c.id === activeCat);
 
   return (
     <div className="space-y-4">
-      {/* En-tête : bascule comptoir / tables + clôture */}
+      {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Caisse</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-full bg-surface p-1">
-            <button
-              onClick={() => setMode("COUNTER")}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-                mode === "COUNTER" ? "bg-brand text-white" : "text-muted"
-              }`}
-            >
-              🧾 Comptoir
-            </button>
-            <button
-              onClick={() => setMode("TABLES")}
-              className={`relative rounded-full px-4 py-1.5 text-sm font-semibold ${
-                mode === "TABLES" ? "bg-brand text-white" : "text-muted"
-              }`}
-            >
-              🍽️ Tables
-              {openOrders.length > 0 && (
-                <span className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
-                  {openOrders.length}
-                </span>
-              )}
-            </button>
+            {(
+              [
+                ["COUNTER", "🧾 Comptoir"],
+                ["TABLES", "🍽️ Tables"],
+                ["HISTORY", "🧮 Historique"],
+              ] as const
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`relative rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+                  mode === m ? "bg-brand text-white" : "text-muted"
+                }`}
+              >
+                {label}
+                {m === "TABLES" && openOrders.length > 0 && (
+                  <span className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                    {openOrders.length}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+          <button
+            onClick={() => setCashOpen(true)}
+            className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold"
+          >
+            💶 Fond
+          </button>
           <button
             onClick={async () => {
               const r = await fetch("/api/caisse/today", { cache: "no-store" });
@@ -192,10 +250,19 @@ export function CaisseScreen({
           >
             📊 Clôture
           </button>
+          {isOwner && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="rounded-xl bg-surface px-3 py-2 text-sm font-semibold"
+              title="Réglages caisse"
+            >
+              ⚙️
+            </button>
+          )}
         </div>
       </div>
 
-      {mode === "COUNTER" ? (
+      {mode === "COUNTER" && (
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
           {/* Catalogue */}
           <div className="space-y-3">
@@ -212,7 +279,6 @@ export function CaisseScreen({
                 </button>
               ))}
             </div>
-
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {cat?.dishes.map((d) => (
                 <button
@@ -229,7 +295,7 @@ export function CaisseScreen({
             </div>
           </div>
 
-          {/* Ticket en cours */}
+          {/* Ticket */}
           <div className="flex h-fit flex-col rounded-2xl border border-border bg-surface/50 p-4 lg:sticky lg:top-4">
             <h2 className="mb-2 font-semibold">Ticket</h2>
             {lines.length === 0 ? (
@@ -270,12 +336,10 @@ export function CaisseScreen({
                 ))}
               </ul>
             )}
-
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-lg font-bold">
               <span>Total</span>
               <span className="tabular-nums">{formatPrice(total, currency)}</span>
             </div>
-
             <div className="mt-3 flex gap-2">
               <button
                 onClick={() => setLines([])}
@@ -294,47 +358,107 @@ export function CaisseScreen({
             </div>
           </div>
         </div>
-      ) : (
-        /* Commandes de table à encaisser */
-        <div>
-          {openOrders.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted">
-              Aucune commande de table à encaisser.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {openOrders.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => payOrder(o)}
-                  className="flex flex-col rounded-2xl border border-border bg-surface/50 p-4 text-left transition hover:border-brand active:scale-[0.98]"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">
-                      {o.tableNumber != null
-                        ? `Table ${o.tableNumber}`
-                        : o.tableLabel ?? "Commande"}
-                    </span>
-                    <span className="text-lg font-bold text-brand tabular-nums">
-                      {formatPrice(o.totalCents, currency)}
-                    </span>
-                  </div>
-                  <ul className="mt-2 space-y-0.5 text-sm text-muted">
-                    {o.items.map((it, i) => (
-                      <li key={i} className="truncate">
-                        {it.quantity}× {it.name}
-                      </li>
-                    ))}
-                  </ul>
-                  <span className="mt-3 rounded-lg bg-brand/10 px-3 py-1.5 text-center text-sm font-semibold text-brand">
-                    Encaisser
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       )}
+
+      {mode === "TABLES" &&
+        (openOrders.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted">
+            Aucune commande de table à encaisser.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {openOrders.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => payOrder(o)}
+                className="flex flex-col rounded-2xl border border-border bg-surface/50 p-4 text-left transition hover:border-brand active:scale-[0.98]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">
+                    {o.tableNumber != null
+                      ? `Table ${o.tableNumber}`
+                      : o.tableLabel ?? "Commande"}
+                  </span>
+                  <span className="text-lg font-bold text-brand tabular-nums">
+                    {formatPrice(o.totalCents, currency)}
+                  </span>
+                </div>
+                <ul className="mt-2 space-y-0.5 text-sm text-muted">
+                  {o.items.map((it, i) => (
+                    <li key={i} className="truncate">
+                      {it.quantity}× {it.name}
+                    </li>
+                  ))}
+                </ul>
+                <span className="mt-3 rounded-lg bg-brand/10 px-3 py-1.5 text-center text-sm font-semibold text-brand">
+                  Encaisser
+                </span>
+              </button>
+            ))}
+          </div>
+        ))}
+
+      {mode === "HISTORY" &&
+        (sales.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted">
+            Aucune vente encaissée aujourd’hui.
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-border">
+                {sales.map((s) => (
+                  <tr
+                    key={s.id}
+                    className={s.refunded ? "bg-red-500/5 text-muted" : ""}
+                  >
+                    <td className="px-3 py-2.5">
+                      <p
+                        className={`font-medium ${s.refunded ? "line-through" : ""}`}
+                      >
+                        {s.source === "COUNTER"
+                          ? "Comptoir"
+                          : s.tableNumber != null
+                            ? `Table ${s.tableNumber}`
+                            : "Table"}
+                        {s.refunded && (
+                          <span className="ml-2 rounded bg-red-500/15 px-1.5 py-0.5 text-[11px] font-semibold text-red-500">
+                            Remboursé
+                          </span>
+                        )}
+                      </p>
+                      <p className="truncate text-xs text-muted">
+                        {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+                      </p>
+                    </td>
+                    <td className="px-2 py-2.5 text-center text-xs text-muted">
+                      {s.paymentMethod === "CARD"
+                        ? "💳"
+                        : s.paymentMethod === "CASH"
+                          ? "💵"
+                          : "🌐"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums">
+                      {formatPrice(s.totalCents + s.tipCents, currency)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      {isOwner && !s.refunded ? (
+                        <button
+                          onClick={() => refund(s)}
+                          className="rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/20"
+                        >
+                          Rembourser
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
 
       {pay && (
         <PayModal
@@ -354,7 +478,10 @@ export function CaisseScreen({
           receipt={receipt}
           currency={currency}
           restaurantName={restaurantName}
-          onClose={() => setReceipt(null)}
+          onClose={() => {
+            setReceipt(null);
+            if (mode === "HISTORY") loadSales();
+          }}
         />
       )}
 
@@ -366,6 +493,38 @@ export function CaisseScreen({
           onClose={() => setCloture(null)}
         />
       )}
+
+      {cashOpen && (
+        <CashModal currency={currency} onClose={() => setCashOpen(false)} />
+      )}
+
+      {settingsOpen && (
+        <SettingsModal
+          currentPermille={vatRate}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={(p) => {
+            setVatRate(p);
+            setSettingsOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function VatBlock({ vat, currency }: { vat: VatBucket[]; currency: string }) {
+  if (!vat || vat.length === 0) return null;
+  return (
+    <div className="mt-2 space-y-0.5 text-xs text-muted">
+      {vat.map((b) => (
+        <div key={b.permille} className="flex justify-between">
+          <span>
+            Dont TVA {formatVatRate(b.permille)} (HT{" "}
+            {formatPrice(b.htCents, currency)})
+          </span>
+          <span className="tabular-nums">{formatPrice(b.vatCents, currency)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -417,8 +576,6 @@ function PayModal({
   return (
     <Overlay onClose={onClose}>
       <h3 className="text-lg font-bold">Encaissement</h3>
-
-      {/* Détail du montant */}
       <div className="mt-3 space-y-1 rounded-xl bg-surface p-3 text-sm">
         <div className="flex justify-between text-muted">
           <span>Sous-total</span>
@@ -442,7 +599,6 @@ function PayModal({
         </div>
       </div>
 
-      {/* Remise en % */}
       <div className="mt-4">
         <label className="text-sm text-muted">Remise</label>
         <div className="mt-1 flex flex-wrap gap-1.5">
@@ -451,9 +607,7 @@ function PayModal({
               key={p}
               onClick={() => setDiscountPct(p)}
               className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
-                discountPct === p
-                  ? "bg-brand text-white"
-                  : "bg-surface text-muted"
+                discountPct === p ? "bg-brand text-white" : "bg-surface text-muted"
               }`}
             >
               {p === 0 ? "Aucune" : `${p}%`}
@@ -462,7 +616,6 @@ function PayModal({
         </div>
       </div>
 
-      {/* Pourboire (montant libre) */}
       <div className="mt-4">
         <label className="text-sm text-muted">Pourboire (facultatif)</label>
         <input
@@ -474,7 +627,6 @@ function PayModal({
         />
       </div>
 
-      {/* Mode de paiement */}
       <div className="mt-4 grid grid-cols-2 gap-2">
         {(["CASH", "CARD"] as const).map((m) => (
           <button
@@ -580,6 +732,9 @@ function ReceiptModal({
           <span>Total</span>
           <span className="tabular-nums">{formatPrice(receipt.dueCents, currency)}</span>
         </div>
+        <div className="text-left">
+          <VatBlock vat={receipt.vat} currency={currency} />
+        </div>
         <p className="mt-1 text-sm text-muted">
           {receipt.paymentMethod === "CASH" ? "Espèces" : "Carte"}
           {receipt.changeCents > 0 &&
@@ -625,9 +780,7 @@ function ClotureModal({
   );
   return (
     <Overlay onClose={onClose}>
-      <p className="text-center font-display text-lg font-semibold">
-        {restaurantName}
-      </p>
+      <p className="text-center font-display text-lg font-semibold">{restaurantName}</p>
       <p className="mb-3 text-center text-xs text-muted">
         Clôture du jour · {data.count} vente{data.count > 1 ? "s" : ""}
       </p>
@@ -636,10 +789,22 @@ function ClotureModal({
         {row("💳 Carte", data.cardCents)}
         {row("🌐 En ligne / QR", data.onlineCents)}
       </div>
-      {(data.tipsCents > 0 || data.discountCents > 0) && (
+      {data.vat.length > 0 && (
+        <div className="border-b border-dashed border-border py-2 text-muted">
+          {data.vat.map((b) => (
+            <div key={b.permille} className="flex justify-between py-0.5 text-sm">
+              <span>TVA {formatVatRate(b.permille)}</span>
+              <span className="tabular-nums">{formatPrice(b.vatCents, currency)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {(data.tipsCents > 0 || data.discountCents > 0 || data.refundedCount > 0) && (
         <div className="border-b border-dashed border-border py-2 text-muted">
           {data.tipsCents > 0 && row("Dont pourboires", data.tipsCents)}
           {data.discountCents > 0 && row("Remises accordées", data.discountCents)}
+          {data.refundedCount > 0 &&
+            row(`Remboursements (${data.refundedCount})`, -data.refundedCents)}
         </div>
       )}
       <div className="pt-2">{row("Total encaissé", data.totalCents, true)}</div>
@@ -648,6 +813,242 @@ function ClotureModal({
         className="mt-5 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white"
       >
         Fermer
+      </button>
+    </Overlay>
+  );
+}
+
+function CashModal({
+  currency,
+  onClose,
+}: {
+  currency: string;
+  onClose: () => void;
+}) {
+  const [sess, setSess] = useState<CashSess>(null);
+  const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [closed, setClosed] = useState<{
+    openingCents: number;
+    expectedCents: number;
+    countedCents: number;
+    diffCents: number;
+  } | null>(null);
+
+  const toCents = (s: string) =>
+    Math.max(0, Math.round(parseFloat(s.replace(",", ".")) * 100) || 0);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const r = await fetch("/api/caisse/cash-session", { cache: "no-store" });
+    if (r.ok) setSess((await r.json()).session);
+    setLoading(false);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function open() {
+    setBusy(true);
+    await fetch("/api/caisse/cash-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "open", openingCents: toCents(amount) }),
+    });
+    setAmount("");
+    setBusy(false);
+    load();
+  }
+  async function close() {
+    setBusy(true);
+    const r = await fetch("/api/caisse/cash-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "close", countedCents: toCents(amount) }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (r.ok) setClosed(j.closed);
+  }
+
+  return (
+    <Overlay onClose={onClose}>
+      <h3 className="text-lg font-bold">Fond de caisse</h3>
+
+      {loading ? (
+        <p className="py-8 text-center text-sm text-muted">…</p>
+      ) : closed ? (
+        <div className="mt-4">
+          <div className="space-y-1 rounded-xl bg-surface p-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted">Fond d’ouverture</span>
+              <span className="tabular-nums">
+                {formatPrice(closed.openingCents, currency)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Attendu en caisse</span>
+              <span className="tabular-nums">
+                {formatPrice(closed.expectedCents, currency)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Compté</span>
+              <span className="tabular-nums">
+                {formatPrice(closed.countedCents, currency)}
+              </span>
+            </div>
+            <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-bold">
+              <span>Écart</span>
+              <span
+                className={`tabular-nums ${
+                  closed.diffCents === 0
+                    ? "text-emerald-500"
+                    : "text-red-500"
+                }`}
+              >
+                {closed.diffCents > 0 ? "+" : ""}
+                {formatPrice(closed.diffCents, currency)}
+              </span>
+            </div>
+          </div>
+          <p className="mt-2 text-center text-xs text-muted">
+            {closed.diffCents === 0
+              ? "Caisse juste ✔︎"
+              : closed.diffCents > 0
+                ? "Excédent en caisse"
+                : "Manque en caisse"}
+          </p>
+          <button
+            onClick={onClose}
+            className="mt-4 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white"
+          >
+            Fermer
+          </button>
+        </div>
+      ) : sess ? (
+        <div className="mt-4">
+          <div className="space-y-1 rounded-xl bg-surface p-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted">Fond d’ouverture</span>
+              <span className="tabular-nums">
+                {formatPrice(sess.openingCents, currency)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Ventes espèces</span>
+              <span className="tabular-nums">
+                {formatPrice(sess.cashSalesCents, currency)}
+              </span>
+            </div>
+            <div className="mt-1 flex justify-between border-t border-border pt-1 font-bold">
+              <span>Attendu en caisse</span>
+              <span className="tabular-nums text-brand">
+                {formatPrice(sess.expectedCents, currency)}
+              </span>
+            </div>
+          </div>
+          <label className="mt-4 block text-sm text-muted">Espèces comptées</label>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder="0"
+            className="mt-1 w-full rounded-xl bg-surface px-4 py-3 text-lg outline-none focus:ring-2 focus:ring-brand"
+          />
+          <button
+            onClick={close}
+            disabled={busy}
+            className="mt-4 w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-60"
+          >
+            {busy ? "…" : "Clôturer la caisse"}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <p className="text-sm text-muted">
+            Ouvrez la caisse en indiquant le fond de départ (la monnaie déjà
+            présente dans le tiroir).
+          </p>
+          <label className="mt-4 block text-sm text-muted">Fond d’ouverture</label>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder="0"
+            className="mt-1 w-full rounded-xl bg-surface px-4 py-3 text-lg outline-none focus:ring-2 focus:ring-brand"
+          />
+          <button
+            onClick={open}
+            disabled={busy}
+            className="mt-4 w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-60"
+          >
+            {busy ? "…" : "Ouvrir la caisse"}
+          </button>
+        </div>
+      )}
+    </Overlay>
+  );
+}
+
+function SettingsModal({
+  currentPermille,
+  onClose,
+  onSaved,
+}: {
+  currentPermille: number;
+  onClose: () => void;
+  onSaved: (permille: number) => void;
+}) {
+  const [permille, setPermille] = useState(currentPermille);
+  const [busy, setBusy] = useState(false);
+  const options = [
+    { label: "Aucune", value: 0 },
+    { label: "5,5 %", value: 55 },
+    { label: "10 %", value: 100 },
+    { label: "20 %", value: 200 },
+  ];
+
+  async function save() {
+    setBusy(true);
+    const r = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vatPermille: permille }),
+    });
+    setBusy(false);
+    if (r.ok) onSaved(permille);
+  }
+
+  return (
+    <Overlay onClose={onClose}>
+      <h3 className="text-lg font-bold">Réglages caisse</h3>
+      <p className="mt-3 text-sm text-muted">
+        Taux de TVA par défaut appliqué sur les tickets. (Un plat peut avoir son
+        propre taux, ex. boissons alcoolisées.)
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            onClick={() => setPermille(o.value)}
+            className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+              permille === o.value
+                ? "border-brand bg-brand/15 text-brand"
+                : "border-border bg-surface text-muted"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={save}
+        disabled={busy}
+        className="mt-5 w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-60"
+      >
+        {busy ? "…" : "Enregistrer"}
       </button>
     </Overlay>
   );

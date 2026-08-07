@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { vatBreakdown, mergeVat } from "@/lib/vat";
 
 // GET /api/caisse/today — résumé des ventes payées du jour (clôture / ticket Z).
 export async function GET() {
@@ -12,14 +13,21 @@ export async function GET() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
 
+  // Ventes réglées et NON remboursées.
   const orders = await db.order.findMany({
-    where: { restaurantId: session.rid, paid: true, paidAt: { gte: start } },
+    where: {
+      restaurantId: session.rid,
+      paid: true,
+      paidAt: { gte: start },
+      refundedAt: null,
+    },
     select: {
       totalCents: true,
       tipCents: true,
       discountCents: true,
       paymentMethod: true,
       source: true,
+      items: { select: { unitPriceCents: true, quantity: true, vatPermille: true } },
     },
   });
 
@@ -36,6 +44,29 @@ export async function GET() {
   );
   const counter = orders.filter((o) => o.source === "COUNTER").length;
 
+  // Ventilation de TVA du jour (par taux).
+  const vat = mergeVat(
+    orders.map((o) =>
+      vatBreakdown(
+        o.items.map((i) => ({
+          amountCents: i.unitPriceCents * i.quantity,
+          vatPermille: i.vatPermille,
+        })),
+        o.discountCents
+      )
+    )
+  );
+
+  // Remboursements du jour (pour information).
+  const refunded = await db.order.findMany({
+    where: {
+      restaurantId: session.rid,
+      refundedAt: { gte: start },
+    },
+    select: { totalCents: true, tipCents: true },
+  });
+  const refundedCents = refunded.reduce((s, o) => s + o.totalCents + o.tipCents, 0);
+
   return NextResponse.json({
     date: start,
     count: orders.length,
@@ -46,5 +77,8 @@ export async function GET() {
     onlineCents: online,
     tipsCents: sum((o) => o.tipCents),
     discountCents: sum((o) => o.discountCents),
+    vat,
+    refundedCount: refunded.length,
+    refundedCents,
   });
 }

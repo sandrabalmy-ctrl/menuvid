@@ -48,6 +48,9 @@ model Restaurant {
   loyaltyThreshold Int     @default(10) // nb de visites pour la récompense
   loyaltyReward    String  @default("Un plat offert")
 
+  // Caisse : taux de TVA par défaut, en pour-mille (100 = 10,0 %). 0 = non géré.
+  vatPermille      Int     @default(0)
+
   serviceRequests ServiceRequest[]
   memberships     LoyaltyMembership[]
   reviewProofs    ReviewProof[]
@@ -72,6 +75,26 @@ model Restaurant {
   orders       Order[]
   subscription Subscription?
   events       AnalyticsEvent[]
+  cashSessions CashSession[]
+}
+
+// --- Fond de caisse : ouverture / clôture avec contrôle d'écart -------------
+model CashSession {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  openingCents Int      @default(0) // fond de caisse à l'ouverture
+  openedAt     DateTime @default(now())
+
+  closedAt     DateTime? // nul tant que la session est ouverte
+  countedCents Int?      // espèces réellement comptées à la clôture
+  expectedCents Int?     // attendu = fond + ventes espèces − remboursements espèces
+  diffCents    Int?      // écart = compté − attendu
+
+  createdAt DateTime @default(now())
+
+  @@index([restaurantId, closedAt])
 }
 
 // --- Compte restaurateur (accès back-office) -------------------------------
@@ -145,6 +168,10 @@ model Dish {
   available   Boolean  @default(true) // désactivable en 1 clic (rupture)
   position    Int      @default(0)
 
+  // TVA propre au plat, en pour-mille (ex. 200 pour les boissons alcoolisées).
+  // Nul → on applique le taux par défaut du restaurant.
+  vatPermille Int?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -176,6 +203,10 @@ model Order {
   stripeSessionId String?
   paymentMethod   String?   // CASH | CARD | ONLINE (renseigné à l'encaissement)
   source          String    @default("QR") // QR (table) | COUNTER (caisse)
+
+  // Annulation / remboursement d'une vente déjà encaissée
+  refundedAt      DateTime?
+  refundReason    String?
 
   // Client fidélité éventuel (si connecté au moment de la commande)
   customerId String?
@@ -223,6 +254,7 @@ model OrderItem {
   optionsText    String?  // options/composition (ex. "À point · +Bacon" ou "Entrée: … · Plat: …")
   quantity       Int      @default(1)
   note           String?
+  vatPermille    Int      @default(0) // taux de TVA figé à l'encaissement (pour-mille)
 }
 
 // Formule = menu à prix fixe (ex. entrée + plat + dessert).

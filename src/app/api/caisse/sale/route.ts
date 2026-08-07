@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
     quantity: number;
     optionChoiceIds?: string[];
   }[] = Array.isArray(body.items) ? body.items : [];
-  const paymentMethod = body.paymentMethod === "CARD" ? "CARD" : "CASH";
+  const paymentMethod = ["CARD", "MOBILE"].includes(body.paymentMethod)
+    ? body.paymentMethod
+    : "CASH";
   const amountReceivedCents = Math.max(0, Math.round(Number(body.amountReceivedCents) || 0));
   const tipCents = Math.max(0, Math.round(Number(body.tipCents) || 0));
   const discountPct = Math.min(100, Math.max(0, Math.round(Number(body.discountPct) || 0)));

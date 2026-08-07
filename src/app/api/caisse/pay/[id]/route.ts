@@ -16,7 +16,9 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const paymentMethod = body.paymentMethod === "CARD" ? "CARD" : "CASH";
+  const paymentMethod = ["CARD", "MOBILE"].includes(body.paymentMethod)
+    ? body.paymentMethod
+    : "CASH";
   const amountReceivedCents = Math.max(0, Math.round(Number(body.amountReceivedCents) || 0));
   const tipCents = Math.max(0, Math.round(Number(body.tipCents) || 0));
   const discountPct = Math.min(100, Math.max(0, Math.round(Number(body.discountPct) || 0)));

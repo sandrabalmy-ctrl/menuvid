@@ -38,6 +38,7 @@ export async function GET() {
   const total = sum((o) => o.totalCents + o.tipCents);
   const cash = sum((o) => (o.paymentMethod === "CASH" ? o.totalCents + o.tipCents : 0));
   const card = sum((o) => (o.paymentMethod === "CARD" ? o.totalCents + o.tipCents : 0));
+  const mobile = sum((o) => (o.paymentMethod === "MOBILE" ? o.totalCents + o.tipCents : 0));
   const online = sum((o) =>
     o.paymentMethod === "ONLINE" || (!o.paymentMethod && o.source === "QR")
       ? o.totalCents + o.tipCents
@@ -75,6 +76,7 @@ export async function GET() {
     totalCents: total,
     cashCents: cash,
     cardCents: card,
+    mobileCents: mobile,
     onlineCents: online,
     tipsCents: sum((o) => o.tipCents),
     discountCents: sum((o) => o.discountCents),

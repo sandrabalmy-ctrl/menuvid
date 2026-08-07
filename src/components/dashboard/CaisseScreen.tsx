@@ -53,6 +53,7 @@ type Today = {
   totalCents: number;
   cashCents: number;
   cardCents: number;
+  mobileCents: number;
   onlineCents: number;
   tipsCents: number;
   discountCents: number;
@@ -69,8 +70,9 @@ type CashSess = {
   expectedCents: number;
 } | null;
 
+type PayMethod = "CASH" | "CARD" | "MOBILE";
 type PayPayload = {
-  paymentMethod: "CASH" | "CARD";
+  paymentMethod: PayMethod;
   amountReceivedCents: number;
   tipCents: number;
   discountPct: number;
@@ -446,7 +448,9 @@ export function CaisseScreen({
                         ? "💳"
                         : s.paymentMethod === "CASH"
                           ? "💵"
-                          : "🌐"}
+                          : s.paymentMethod === "MOBILE"
+                            ? "📱"
+                            : "🌐"}
                     </td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums">
                       {formatPrice(s.totalCents + s.tipCents, currency)}
@@ -552,7 +556,7 @@ function PayModal({
   onSubmit: (p: PayPayload) => Promise<Receipt | null>;
   onDone: (r: Receipt) => void;
 }) {
-  const [method, setMethod] = useState<"CASH" | "CARD">("CASH");
+  const [method, setMethod] = useState<PayMethod>("CASH");
   const [received, setReceived] = useState("");
   const [discountPct, setDiscountPct] = useState(0);
   const [tip, setTip] = useState("");
@@ -637,18 +641,18 @@ function PayModal({
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {(["CASH", "CARD"] as const).map((m) => (
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {(["CASH", "CARD", "MOBILE"] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMethod(m)}
-            className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+            className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
               method === m
                 ? "border-brand bg-brand/15 text-brand"
                 : "border-border bg-surface text-muted"
             }`}
           >
-            {m === "CASH" ? "💵 Espèces" : "💳 Carte"}
+            {m === "CASH" ? "💵 Espèces" : m === "CARD" ? "💳 Carte" : "📱 Mobile"}
           </button>
         ))}
       </div>
@@ -746,7 +750,11 @@ function ReceiptModal({
           <VatBlock vat={receipt.vat} currency={currency} />
         </div>
         <p className="mt-1 text-sm text-muted">
-          {receipt.paymentMethod === "CASH" ? "Espèces" : "Carte"}
+          {receipt.paymentMethod === "CASH"
+            ? "Espèces"
+            : receipt.paymentMethod === "MOBILE"
+              ? "Mobile Money"
+              : "Carte"}
           {receipt.changeCents > 0 &&
             ` · Rendu ${formatPrice(receipt.changeCents, currency)}`}
         </p>
@@ -797,6 +805,7 @@ function ClotureModal({
       <div className="border-y border-dashed border-border py-2">
         {row("💵 Espèces", data.cashCents)}
         {row("💳 Carte", data.cardCents)}
+        {row("📱 Mobile Money", data.mobileCents)}
         {row("🌐 En ligne / QR", data.onlineCents)}
       </div>
       {data.vat.length > 0 && (

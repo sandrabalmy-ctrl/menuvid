@@ -1,15 +1,12 @@
 import { requireOwner } from "@/lib/require-owner";
-import { db } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
-import { PLANS } from "@/lib/plan";
+import { PLANS, planPriceCents, type Plan } from "@/lib/plan";
 import { formatPrice } from "@/lib/format";
 import { PlanSelector } from "@/components/dashboard/PlanSelector";
 
 export default async function BillingPage() {
   const { restaurant } = await requireOwner();
-  const sub = await db.subscription.findUnique({
-    where: { restaurantId: restaurant.id },
-  });
+  const priceCents = planPriceCents(restaurant.plan as Plan, restaurant.currency);
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -20,7 +17,7 @@ export default async function BillingPage() {
           <span className="font-medium text-text">
             {PLANS[restaurant.plan as keyof typeof PLANS]?.label ?? restaurant.plan}
           </span>{" "}
-          · {formatPrice(sub?.priceCents ?? 0, restaurant.currency)}/mois
+          · {formatPrice(priceCents, restaurant.currency)}/mois
         </p>
       </div>
 

@@ -22,8 +22,8 @@ export default function ResetPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) {
-      setError("Le mot de passe doit faire au moins 6 caractères.");
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("8 caractères minimum, avec au moins une lettre et un chiffre.");
       return;
     }
     if (password !== confirm) {
@@ -66,7 +66,7 @@ export default function ResetPage() {
           <input
             type="password"
             autoComplete="new-password"
-            placeholder="Nouveau mot de passe (6+ caractères)"
+            placeholder="Nouveau mot de passe (8 car., 1 lettre + 1 chiffre)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl bg-surface px-4 py-3 outline-none focus:ring-2 focus:ring-brand"

@@ -182,7 +182,7 @@ function NewRestaurantForm({ onDone }: { onDone: () => void }) {
         <input
           className={input}
           type="text"
-          placeholder="Mot de passe initial (6+ car.)"
+          placeholder="Mot de passe initial (8 car., 1 lettre + 1 chiffre)"
           value={ownerPassword}
           onChange={(e) => setOwnerPassword(e.target.value)}
         />

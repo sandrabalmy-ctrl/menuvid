@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PLANS, type Plan } from "@/lib/plan";
+import { PLANS, planPriceCents, type Plan } from "@/lib/plan";
 import { formatPrice } from "@/lib/format";
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -86,7 +86,7 @@ export function PlanSelector({
                 )}
               </div>
               <p className="mt-1 text-2xl font-bold">
-                {formatPrice(p.priceCents, currency)}
+                {formatPrice(planPriceCents(key, currency), currency)}
                 <span className="text-sm font-normal text-muted">/mois</span>
               </p>
               <ul className="mt-4 space-y-1.5 text-sm">

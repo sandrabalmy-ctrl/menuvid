@@ -63,7 +63,7 @@ export function StaffManager({ members }: { members: Member[] }) {
             type="text"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mot de passe (6+ car.)"
+            placeholder="Mot de passe (8 car., 1 lettre + 1 chiffre)"
             className={input}
           />
         </div>

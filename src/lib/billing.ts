@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { PLANS, type Plan } from "@/lib/plan";
+import { PLANS, planPriceCents, type Plan } from "@/lib/plan";
 
 // Applique un palier à un restaurant (met à jour le restaurant + son abonnement).
 // Utilisé en mode démo ET par le webhook Stripe quand un paiement est confirmé.
@@ -8,7 +8,7 @@ export async function applyPlan(
   plan: Plan,
   opts?: { stripeCustomerId?: string; stripeSubscriptionId?: string }
 ) {
-  await db.restaurant.update({
+  const resto = await db.restaurant.update({
     where: { id: restaurantId },
     data: {
       plan,
@@ -17,21 +17,23 @@ export async function applyPlan(
         ? { stripeCustomerId: opts.stripeCustomerId }
         : {}),
     },
+    select: { currency: true },
   });
+  const priceCents = planPriceCents(plan, resto.currency);
 
   await db.subscription.upsert({
     where: { restaurantId },
     create: {
       restaurantId,
       plan,
-      priceCents: PLANS[plan].priceCents,
+      priceCents,
       status: "ACTIVE",
       stripeCustomerId: opts?.stripeCustomerId,
       stripeSubscriptionId: opts?.stripeSubscriptionId,
     },
     update: {
       plan,
-      priceCents: PLANS[plan].priceCents,
+      priceCents,
       status: "ACTIVE",
       ...(opts?.stripeCustomerId
         ? { stripeCustomerId: opts.stripeCustomerId }

@@ -12,6 +12,7 @@ const TABS = [
   { href: "/dashboard/menu", label: "Menu", icon: "🍽️" },
   { href: "/dashboard/formules", label: "Formules", icon: "📋" },
   { href: "/dashboard/commandes", label: "Commandes", icon: "🧾" },
+  { href: "/dashboard/caisse", label: "Caisse", icon: "💰" },
   { href: "/dashboard/tables", label: "Tables & QR", icon: "🔳" },
   { href: "/dashboard/stats", label: "Statistiques", icon: "📈", ownerOnly: true },
 ];

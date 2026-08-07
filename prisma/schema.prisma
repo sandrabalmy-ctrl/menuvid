@@ -169,10 +169,12 @@ model Order {
   etaMinutes Int?     // temps d'attente estimé figé à la commande (min)
   note       String?
 
-  // Paiement en ligne
+  // Paiement
   paid            Boolean   @default(false)
   paidAt          DateTime?
   stripeSessionId String?
+  paymentMethod   String?   // CASH | CARD | ONLINE (renseigné à l'encaissement)
+  source          String    @default("QR") // QR (table) | COUNTER (caisse)
 
   // Client fidélité éventuel (si connecté au moment de la commande)
   customerId String?

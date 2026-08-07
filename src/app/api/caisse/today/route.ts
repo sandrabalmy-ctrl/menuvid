@@ -6,8 +6,9 @@ import { vatBreakdown, mergeVat } from "@/lib/vat";
 // GET /api/caisse/today — résumé des ventes payées du jour (clôture / ticket Z).
 export async function GET() {
   const session = await getSession();
-  if (!session?.rid || session.role === "KITCHEN") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  // Chiffres du jour : réservés au propriétaire (cachés au personnel de salle).
+  if (session?.role !== "OWNER" || !session.rid) {
+    return NextResponse.json({ error: "Réservé au propriétaire" }, { status: 401 });
   }
 
   const start = new Date();

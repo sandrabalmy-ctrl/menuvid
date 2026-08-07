@@ -22,8 +22,9 @@ async function expectedCash(rid: string, openingCents: number, since: Date) {
 // GET — session de caisse en cours (ou null), avec l'attendu calculé en direct.
 export async function GET() {
   const session = await getSession();
-  if (!session?.rid || session.role === "KITCHEN") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  // Fond de caisse (laisse voir les espèces attendues) : réservé au propriétaire.
+  if (session?.role !== "OWNER" || !session.rid) {
+    return NextResponse.json({ error: "Réservé au propriétaire" }, { status: 401 });
   }
 
   const open = await db.cashSession.findFirst({
@@ -51,8 +52,9 @@ export async function GET() {
 // POST — ouvrir ({action:"open", openingCents}) ou clôturer ({action:"close", countedCents}).
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session?.rid || session.role === "KITCHEN") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  // Fond de caisse (laisse voir les espèces attendues) : réservé au propriétaire.
+  if (session?.role !== "OWNER" || !session.rid) {
+    return NextResponse.json({ error: "Réservé au propriétaire" }, { status: 401 });
   }
   const body = await req.json().catch(() => ({}));
   const rid = session.rid;

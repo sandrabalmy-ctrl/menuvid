@@ -216,7 +216,8 @@ export function CaisseScreen({
               [
                 ["COUNTER", "🧾 Comptoir"],
                 ["TABLES", "🍽️ Tables"],
-                ["HISTORY", "🧮 Historique"],
+                // Historique (chiffres du jour) : propriétaire seulement.
+                ...(isOwner ? [["HISTORY", "🧮 Historique"] as const] : []),
               ] as const
             ).map(([m, label]) => (
               <button
@@ -235,29 +236,31 @@ export function CaisseScreen({
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setCashOpen(true)}
-            className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold"
-          >
-            💶 Fond
-          </button>
-          <button
-            onClick={async () => {
-              const r = await fetch("/api/caisse/today", { cache: "no-store" });
-              if (r.ok) setCloture(await r.json());
-            }}
-            className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold"
-          >
-            📊 Clôture
-          </button>
           {isOwner && (
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="rounded-xl bg-surface px-3 py-2 text-sm font-semibold"
-              title="Réglages caisse"
-            >
-              ⚙️
-            </button>
+            <>
+              <button
+                onClick={() => setCashOpen(true)}
+                className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold"
+              >
+                💶 Fond
+              </button>
+              <button
+                onClick={async () => {
+                  const r = await fetch("/api/caisse/today", { cache: "no-store" });
+                  if (r.ok) setCloture(await r.json());
+                }}
+                className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold"
+              >
+                📊 Clôture
+              </button>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="rounded-xl bg-surface px-3 py-2 text-sm font-semibold"
+                title="Réglages caisse"
+              >
+                ⚙️
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -399,6 +402,7 @@ export function CaisseScreen({
         ))}
 
       {mode === "HISTORY" &&
+        isOwner &&
         (sales.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted">
             Aucune vente encaissée aujourd’hui.

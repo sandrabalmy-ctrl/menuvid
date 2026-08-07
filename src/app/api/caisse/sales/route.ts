@@ -5,8 +5,9 @@ import { getSession } from "@/lib/auth";
 // GET /api/caisse/sales — ventes encaissées du jour (pour l'historique / remboursement).
 export async function GET() {
   const session = await getSession();
-  if (!session?.rid || session.role === "KITCHEN") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  // Historique / chiffres du jour : réservés au propriétaire.
+  if (session?.role !== "OWNER" || !session.rid) {
+    return NextResponse.json({ error: "Réservé au propriétaire" }, { status: 401 });
   }
 
   const start = new Date();

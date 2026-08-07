@@ -29,7 +29,7 @@ export function LogoRing({
   } as const;
 
   return (
-    <div className="relative mx-auto h-72 w-72">
+    <div className="relative mx-auto h-[22rem] w-[22rem]">
       {/* Logo au centre */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         {logoUrl ? (
@@ -37,7 +37,7 @@ export function LogoRing({
           <img
             src={logoUrl}
             alt={name}
-            className="h-28 w-28 rounded-2xl object-contain shadow-xl shadow-black/40 ring-2 ring-brand/40"
+            className="h-[8.5rem] w-[8.5rem] rounded-[20px] object-contain shadow-xl shadow-black/40 ring-2 ring-brand/40"
           />
         ) : (
           <span className="font-display text-3xl font-semibold text-brand">

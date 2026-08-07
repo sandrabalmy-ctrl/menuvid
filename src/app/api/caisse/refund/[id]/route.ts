@@ -33,14 +33,27 @@ export async function POST(
     return NextResponse.json({ error: "Déjà remboursée" }, { status: 409 });
   }
 
+  // Traçabilité : on fige qui a effectué le remboursement.
+  const operator = await db.user.findUnique({
+    where: { id: session.uid },
+    select: { email: true },
+  });
+
   const updated = await db.order.update({
     where: { id: order.id },
-    data: { refundedAt: new Date(), refundReason: reason, status: "CANCELLED" },
+    data: {
+      refundedAt: new Date(),
+      refundReason: reason,
+      refundedById: session.uid,
+      refundedByEmail: operator?.email ?? null,
+      status: "CANCELLED",
+    },
   });
 
   return NextResponse.json({
     orderId: updated.id,
     refundedAt: updated.refundedAt,
+    refundedByEmail: updated.refundedByEmail,
     refundedCents: order.totalCents + order.tipCents,
   });
 }

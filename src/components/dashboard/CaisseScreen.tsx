@@ -43,6 +43,7 @@ type Sale = {
   tableNumber: number | null;
   paidAt: string;
   refunded: boolean;
+  refundedByEmail: string | null;
   items: { name: string; quantity: number }[];
 };
 
@@ -434,6 +435,11 @@ export function CaisseScreen({
                       <p className="truncate text-xs text-muted">
                         {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
                       </p>
+                      {s.refunded && s.refundedByEmail && (
+                        <p className="truncate text-[11px] text-red-500/80">
+                          Remboursé par {s.refundedByEmail}
+                        </p>
+                      )}
                     </td>
                     <td className="px-2 py-2.5 text-center text-xs text-muted">
                       {s.paymentMethod === "CARD"

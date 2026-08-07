@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { validatePassword } from "@/lib/password";
 
 // POST /api/staff — le propriétaire crée un compte pour un membre de l'équipe.
 export async function POST(req: NextRequest) {
@@ -14,11 +15,12 @@ export async function POST(req: NextRequest) {
   const cleanEmail = String(email ?? "").toLowerCase().trim();
   const r = role === "KITCHEN" ? "KITCHEN" : "STAFF";
 
-  if (!cleanEmail || typeof password !== "string" || password.length < 6) {
-    return NextResponse.json(
-      { error: "Email et mot de passe (6 caractères min.) requis." },
-      { status: 400 }
-    );
+  if (!cleanEmail) {
+    return NextResponse.json({ error: "Email requis." }, { status: 400 });
+  }
+  const pw = validatePassword(password);
+  if (!pw.ok) {
+    return NextResponse.json({ error: pw.error }, { status: 400 });
   }
   const exists = await db.user.findUnique({ where: { email: cleanEmail } });
   if (exists) {

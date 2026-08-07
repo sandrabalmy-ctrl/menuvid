@@ -30,6 +30,7 @@ export async function GET() {
       tableNumber: o.table?.number ?? null,
       paidAt: o.paidAt,
       refunded: o.refundedAt != null,
+      refundedByEmail: o.refundedByEmail,
       items: o.items.map((i) => ({
         name: i.nameSnapshot,
         quantity: i.quantity,

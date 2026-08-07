@@ -207,6 +207,8 @@ model Order {
   // Annulation / remboursement d'une vente déjà encaissée
   refundedAt      DateTime?
   refundReason    String?
+  refundedById    String?   // qui a effectué le remboursement (traçabilité)
+  refundedByEmail String?   // email de l'opérateur, figé pour le journal
 
   // Client fidélité éventuel (si connecté au moment de la commande)
   customerId String?

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { validatePassword } from "@/lib/password";
 
 // POST /api/auth/reset { token, password } — définit un nouveau mot de passe.
 export async function POST(req: NextRequest) {
@@ -9,11 +10,12 @@ export async function POST(req: NextRequest) {
     .json()
     .catch(() => ({ token: "", password: "" }));
 
-  if (!token || typeof password !== "string" || password.length < 6) {
-    return NextResponse.json(
-      { error: "Mot de passe invalide (6 caractères minimum)." },
-      { status: 400 }
-    );
+  if (!token) {
+    return NextResponse.json({ error: "Lien invalide." }, { status: 400 });
+  }
+  const pw = validatePassword(password);
+  if (!pw.ok) {
+    return NextResponse.json({ error: pw.error }, { status: 400 });
   }
 
   const tokenHash = createHash("sha256").update(String(token)).digest("hex");
